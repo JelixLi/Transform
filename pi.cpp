@@ -64,7 +64,7 @@ void Init(SharedArray<float> input,int m,int n) {
   }
 }
 
-void cpu_gemm(SharedArray<float> A,SharedArray<float> B,SharedArray<float> C,int m,int n,int k) {
+void cpu_gemm(SharedArray<float> A,SharedArray<float> B,float *C,int m,int n,int k) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
       float sum = 0;
@@ -95,7 +95,7 @@ int main() {
    int k = 10;
 
    SharedArray<float> A(m*k*256),B(k*n*256),C(m*n*256);
-   float D[m*16][n*16];
+   float D[m*n*256];
 
    Init(A,m*16,k*16);
    Init(B,k*16,n*16);
