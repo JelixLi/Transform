@@ -64,7 +64,7 @@ void transformToGpuFormat(
     int pad,
     int stride) {
 
-    float *output_data=_shared_array_buffer;
+    SharedArray<float> &output_data=_shared_array_buffer;
 
     const int output_h = (input_height + 2 * pad - kernel_size) / stride + 1;
     const int output_w = (input_width + 2 * pad - kernel_size) / stride + 1;
