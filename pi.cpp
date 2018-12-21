@@ -558,6 +558,7 @@ int main() {
     int k = row_size;
 
     SharedArray<float> A(m*k),B(k*n),C(m*n*16);
+    float F[m*k];
     float D[m*n];
     float G[m*n];
     float E[k*n];
@@ -586,7 +587,10 @@ int main() {
 
     start=clock();
     // cpu_gemm(A,E,D,m,n,k-row_padding);
-    sgemm(m,n,k-row_padding,A,B,C);
+    for(int i=0;i<m*k;i++) {
+      F[i] = A[i];
+    }
+    sgemm(m,n,k-row_padding,F,E,D);
     end=clock();
 
 
