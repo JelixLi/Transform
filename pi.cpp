@@ -269,7 +269,7 @@ int main() {
     transformToGpuFormat(B,image,height,width,channels,kernel_size,pad,stride);
 
     auto K=compile(gemm);
-    K.setNumQPUs(1);
+    K.setNumQPUs(12);
 
     clock_t start=clock();
     K(&A,&B,&C,m,n,k);
