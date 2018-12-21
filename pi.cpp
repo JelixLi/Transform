@@ -537,7 +537,7 @@ float *get_image(int channels,int height,int width) {
 int main() {
     int output_num = 196;
 
-    int channels = 25;
+    int channels = 1;
     int height = 28;
     int width = 28;
     int pad = 0;
@@ -596,8 +596,8 @@ int main() {
 
     check(G,D,m,n);
 
-    display_cpu(G,m,n);
-    printf("\n");
+    // display_cpu(G,m,n);
+    // printf("\n");
     // display_cpu(D,m,n);
     // printf("\n");
 
