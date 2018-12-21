@@ -538,11 +538,11 @@ int main() {
     int output_num = 196;
 
     int channels = 2;
-    int height = 4;
-    int width = 4;
+    int height = 2;
+    int width = 2;
     int pad = 0;
     int stride = 1;
-    int kernel_size = 3;
+    int kernel_size = 1;
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
