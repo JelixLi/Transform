@@ -450,7 +450,7 @@ void gemm_estimator(SharedArray<float> &A,SharedArray<float> &B,SharedArray<floa
             }
         }
         for(int t=0;t<16;t++) {
-          C[i*n+j+t] = sum[t];
+          C[(i*n+j)*16+t] = sum[t];
         }
       }
     }
