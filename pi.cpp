@@ -56,7 +56,7 @@ void im2col(const float *data_im, const int channels, const int height,
 
 
 void transformToGpuFormat(
-    Ptr<Float>  _shared_array_buffer,
+    SharedArray<float> &_shared_array_buffer,
     const float *input_data_buffer,
     int input_height,
     int input_width,
@@ -65,7 +65,7 @@ void transformToGpuFormat(
     int pad,
     int stride) {
 
-    float *output_data=_shared_array_buffer;
+    SharedArray<float> & output_data = _shared_array_buffer;
 
     const int output_h = (input_height + 2 * pad - kernel_size) / stride + 1;
     const int output_w = (input_width + 2 * pad - kernel_size) / stride + 1;
@@ -75,6 +75,8 @@ void transformToGpuFormat(
 
     const float *input_data;
 
+    int array_pos = 0;
+ 
     for(int row=-pad;row<input_height+pad-kernel_size+1;row+=stride) {
         for(int col=-pad;col<input_width+pad-kernel_size+1;col+=stride) {
 
@@ -89,9 +91,9 @@ void transformToGpuFormat(
                         int new_col=col+kernel_col;
 
                         if(is_a_ge_zero_and_a_lt_b(new_row,input_height)&&is_a_ge_zero_and_a_lt_b(new_col,input_width)) {
-                            *output_data++ = input_data[new_row*input_width+new_col];
+                            *output_data[array_pos++] = input_data[new_row*input_width+new_col];
                         } else {
-                            *output_data++ = 0;
+                            *output_data[array_pos++] = 0;
                         }               
                     }
                 }
@@ -99,7 +101,7 @@ void transformToGpuFormat(
             }
 
             for(int i=0;i<row_padding;i++) {
-                 *output_data++ = 0;
+                 *output_data[array_pos++] = 0;
             }
 
         }
@@ -107,7 +109,7 @@ void transformToGpuFormat(
 
     for(int i=col_padding;i;i--) {
         for(int j=row_padding+input_channel*kernel_size*kernel_size;j;j--) {
-            *output_data++ = 0;
+            *output_data[array_pos++] = 0;
         }
     }   
 
@@ -260,13 +262,14 @@ int main() {
     SharedArray<float> A(m*k*256),B(k*n*256),C(m*n*256);
     float D[m*n*256];
     float G[m*n*256];
+    float E[k*n*256];
 
     Init(A,m*16,k*16);
 
     float *image = get_image(channels,height,width);
 
 
-    transformToGpuFormat(&B,image,height,width,channels,kernel_size,pad,stride);
+    transformToGpuFormat(B,image,height,width,channels,kernel_size,pad,stride);
 
 
     auto K=compile(gemm);
@@ -280,10 +283,10 @@ int main() {
 
     printf("gpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 
-    im2col(image,channels,height,width,kernel_size,pad,stride,&B);
+    im2col(image,channels,height,width,kernel_size,pad,stride,E);
 
     start=clock();
-    cpu_gemm(A,B,D,m*16,n*16,k*16);
+    cpu_gemm(A,E,D,m*16,n*16,k*16);
     end=clock();
 
 
