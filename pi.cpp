@@ -547,9 +547,9 @@ float *get_image(int channels,int height,int width) {
 int main() {
     int output_num = 196;
 
-    int channels = 2;
-    int height = 4;
-    int width = 4;
+    int channels = 51;
+    int height = 28;
+    int width = 28;
     int pad = 0;
     int stride = 1;
     int kernel_size = 3;
