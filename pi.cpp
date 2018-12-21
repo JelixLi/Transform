@@ -411,7 +411,7 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
 
     Int qpuNums = numQPUs();
 
-    Int iNC_ = 16;
+    Int inc = 16;
     Int ind = index();
     Int inm = me()*k;
 
@@ -432,14 +432,14 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
            gather(p);
            gather(q);
            sum = 0;
-           For(Int s=0,s<k,s=s+iNC_)
-              gather(p+iNC_);
-              gather(q+iNC_);
+           For(Int s=0,s<k,s=s+inc)
+              gather(p+inc);
+              gather(q+inc);
               receive(x);
               receive(y);
               sum = sum + x*y;
-              p=p+iNC_;
-              q=q+iNC_;
+              p=p+inc;
+              q=q+inc;
            End
            receive(x);
            receive(y);
@@ -547,7 +547,7 @@ float *get_image(int channels,int height,int width) {
 int main() {
     int output_num = 196;
 
-    int channels = 98;
+    int channels = 5;
     int height = 28;
     int width = 28;
     int pad = 2;
@@ -604,7 +604,7 @@ int main() {
 
     printf("cpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 
-    // check(G,D,m,n);
+    check(G,D,m,n);
 
     // display_cpu(G,m,n);
     // printf("\n");
