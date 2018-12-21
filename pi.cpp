@@ -198,6 +198,7 @@ void check(float *A,float *B,int m,int n) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
       if(int(A[i*n+j])!=int(B[i*n+j])) {
+          printf("%d  %d\n",int(A[i*n+j]),int(B[i*n+j]));
           printf("error\n");
           return;
       }
