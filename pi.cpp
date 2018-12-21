@@ -172,11 +172,30 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
 #endif
 
 
-void Init(SharedArray<float> &input,int m,int n) {
-  for(int i=0;i<m;i++) {
-    for(int j=0;j<n;j++) {
-      input[i*n+j] = float(i*n+j);
-    }
+void Init_Weight_Gpu(SharedArray<float> &A,int channels,int kernel_size,int output_num) {
+  int size = channels*kernel_size*kernel_size;
+  int padding = 16 - size % 16;
+
+  int pos = 0;
+  for(int i=0;i<output_num;i++) {
+      for(int j=0;j<size;j++) {
+          A[pos++] = pos;
+      }
+
+      for(int j=0;j<padding;j++) {
+          A[pos++] = 0;
+      }
+  }
+}
+
+void Init_Weight_Cpu(SharedArray<float> &A,int channels,int kernel_size,int output_num) {
+  int size = channels*kernel_size*kernel_size;
+
+  int pos = 0;
+  for(int i=0;i<output_num;i++) {
+      for(int j=0;j<size;j++) {
+          A[pos++] = pos;
+      }
   }
 }
 
@@ -233,9 +252,6 @@ float *get_image(int channels,int height,int width) {
 }
 
 int main() {
-
-    // here assume that the weight data has already been ordered by 16 
-
     int output_num = 12;
 
     int channels = 1;
@@ -243,7 +259,7 @@ int main() {
     int width = 4;
     int pad = 0;
     int stride = 1;
-    int kernel_size = 4;
+    int kernel_size = 3;
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
@@ -263,7 +279,7 @@ int main() {
     float G[m*n];
     float E[k*n];
 
-    Init(A,m,k);
+    Init_Weight_Gpu(A,channels,kernel_size,output_num);
 
     float *image = get_image(channels,height,width);
 
@@ -279,6 +295,9 @@ int main() {
     TransToCpuFormat(m*n*16,C,G); 
 
     printf("gpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
+
+
+    Init_Weight_Cpu(A,channels,kernel_size,output_num);
 
     im2col(image,channels,height,width,kernel_size,pad,stride,E);
 
