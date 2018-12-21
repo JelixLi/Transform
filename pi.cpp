@@ -117,7 +117,7 @@ void TransToCpuFormat(
 
     int sum=0;
     for(int i=0;i<data_num;i++) {
-        if(i%16==0) {
+        if(i&&i%16==0) {
             *cpu_data++ = sum;
             sum = 0;
         }
@@ -196,7 +196,7 @@ void cpu_gemm(SharedArray<float> &A,float *B,float *C,int m,int n,int k) {
 void check(float *A,float *B,int m,int n) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
-      if(A[i*n+j]!=B[i*n+j]) {
+      if(int(A[i*n+j])!=int(B[i*n+j])) {
           printf("%f  %f\n",A[i*n+j],B[i*n+j]);
           printf("error\n");
           return;
