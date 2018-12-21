@@ -254,7 +254,7 @@ float *get_image(int channels,int height,int width) {
 }
 
 int main() {
-    int output_num = 12;
+    int output_num = 196;
 
     int channels = 1;
     int height = 4;
@@ -288,7 +288,7 @@ int main() {
     transformToGpuFormat(B,image,height,width,channels,kernel_size,pad,stride);
 
     auto K=compile(gemm);
-    K.setNumQPUs(5);
+    K.setNumQPUs(12);
 
     clock_t start=clock();
     K(&A,&B,&C,m,n,k);
