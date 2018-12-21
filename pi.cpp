@@ -91,9 +91,9 @@ void transformToGpuFormat(
                         int new_col=col+kernel_col;
 
                         if(is_a_ge_zero_and_a_lt_b(new_row,input_height)&&is_a_ge_zero_and_a_lt_b(new_col,input_width)) {
-                            *output_data[array_pos++] = input_data[new_row*input_width+new_col];
+                            output_data[array_pos++] = input_data[new_row*input_width+new_col];
                         } else {
-                            *output_data[array_pos++] = 0;
+                            output_data[array_pos++] = 0;
                         }               
                     }
                 }
@@ -101,7 +101,7 @@ void transformToGpuFormat(
             }
 
             for(int i=0;i<row_padding;i++) {
-                 *output_data[array_pos++] = 0;
+                 output_data[array_pos++] = 0;
             }
 
         }
@@ -109,7 +109,7 @@ void transformToGpuFormat(
 
     for(int i=col_padding;i;i--) {
         for(int j=row_padding+input_channel*kernel_size*kernel_size;j;j--) {
-            *output_data[array_pos++] = 0;
+            output_data[array_pos++] = 0;
         }
     }   
 
@@ -117,17 +117,17 @@ void transformToGpuFormat(
 
 void TransToCpuFormat(
     int data_num,
-    Ptr<Float> gpu_vec_data,
+    SharedArray<float> &gpu_vec_data,
     float *cpu_data) {
 
     int sum=0;
-    for(int i=1;i<=data_num;i++) {
+    for(int i=0;i<data_num;i++) {
         if(i%16==0) {
             *cpu_data++ = sum;
             sum = 0;
         }
 
-        sum += *gpu_vec_data++;
+        sum += gpu_vec_data[i];
     }
 }
 
@@ -181,7 +181,7 @@ void Init(SharedArray<float> &input,int m,int n) {
   }
 }
 
-void cpu_gemm(SharedArray<float> &A,SharedArray<float> &B,float *C,int m,int n,int k) {
+void cpu_gemm(SharedArray<float> &A,float *B,float *C,int m,int n,int k) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
       float sum = 0;
@@ -194,7 +194,7 @@ void cpu_gemm(SharedArray<float> &A,SharedArray<float> &B,float *C,int m,int n,i
 }
 
 
-void check(SharedArray<float> &A,float *B,int m,int n) {
+void check(float *A,float *B,int m,int n) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
       if(int(A[i*n+j])!=int(B[i*n+j])) {
@@ -230,7 +230,7 @@ float *get_image(int channels,int height,int width) {
     for(int i=0;i<channels*height*width;i++) {
       image[i] = i;
     }
-    return iamge;
+    return image;
 }
 
 int main() {
@@ -279,7 +279,7 @@ int main() {
     K(&A,&B,&C,m,n,k);
     clock_t end=clock();
 
-    TransToCpuFormat(m*n*256,Ptr<Float> gpu_vec_data,G); 
+    TransToCpuFormat(m*n*256,C,G); 
 
     printf("gpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 
