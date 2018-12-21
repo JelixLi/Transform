@@ -197,8 +197,8 @@ void cpu_gemm(SharedArray<float> &A,float *B,float *C,int m,int n,int k) {
 void check(float *A,float *B,int m,int n) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
-      if(int(A[i*n+j])!=int(B[i*n+j])) {
-          printf("%d  %d\n",int(A[i*n+j]),int(B[i*n+j]));
+      if(A[i*n+j]!=B[i*n+j]) {
+          printf("%f  %f\n",A[i*n+j],B[i*n+j]);
           printf("error\n");
           return;
       }
@@ -210,7 +210,7 @@ void check(float *A,float *B,int m,int n) {
 void display(SharedArray<float> &A,int m,int n) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
-          printf("%d ",A[i*n+j]);  
+          printf("%f ",A[i*n+j]);  
     }
     printf("\n");
   } 
@@ -219,7 +219,7 @@ void display(SharedArray<float> &A,int m,int n) {
 void display_cpu(float *A,int m,int n) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
-          printf("%d ",A[i*n+j]);  
+          printf("%f ",A[i*n+j]);  
     }
     printf("\n");
   }  
@@ -295,8 +295,8 @@ int main() {
 
     check(G,D,m*16,n*16);
 
-    display_cpu(G,m*16,n*16);
-    display_cpu(D,m*16,n*16);
+    // display_cpu(G,m*16,n*16);
+    // display_cpu(D,m*16,n*16);
 
 }
 
