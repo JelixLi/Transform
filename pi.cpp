@@ -161,7 +161,7 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
            End
            receive(x);
            receive(y);
-           store(sum,C + ((r*m)<<4) + (n<<4));
+           store(sum,C + ind + ((r*n+c)<<4));
       End 
     End 
 
