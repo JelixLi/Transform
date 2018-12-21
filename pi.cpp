@@ -295,8 +295,8 @@ int main() {
 
     check(G,D,m*16,n*16);
 
-    // display_cpu(G,m*16,n*16);
-    // display_cpu(D,m*16,n*16);
+    display_cpu(G,m*16,n*16);
+    display_cpu(D,m*16,n*16);
 
 }
 
