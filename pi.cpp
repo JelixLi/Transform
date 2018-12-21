@@ -177,9 +177,10 @@ void Init_Weight_Gpu(SharedArray<float> &A,int channels,int kernel_size,int outp
   int padding = 16 - size % 16;
 
   int pos = 0;
+  int num = 0;
   for(int i=0;i<output_num;i++) {
       for(int j=0;j<size;j++) {
-          A[pos++] = pos;
+          A[pos++] = num++;
       }
 
       for(int j=0;j<padding;j++) {
@@ -192,9 +193,10 @@ void Init_Weight_Cpu(SharedArray<float> &A,int channels,int kernel_size,int outp
   int size = channels*kernel_size*kernel_size;
 
   int pos = 0;
+  int num = 0;
   for(int i=0;i<output_num;i++) {
       for(int j=0;j<size;j++) {
-          A[pos++] = pos;
+          A[pos++] = num++;
       }
   }
 }
