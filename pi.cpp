@@ -252,7 +252,7 @@ int main() {
     int col_size = output_h*output_w;
 
 
-    int m = (kernel_size*kernel_size*output_num);
+    int m = output_num;
     int n = col_size;
     int k = row_size;
 
@@ -281,7 +281,7 @@ int main() {
     im2col(image,channels,height,width,kernel_size,pad,stride,E);
 
     start=clock();
-    cpu_gemm(A,E,D,m,n,k*16);
+    cpu_gemm(A,E,D,m,n,k-row_padding);
     end=clock();
 
 
