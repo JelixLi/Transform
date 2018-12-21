@@ -547,7 +547,7 @@ float *get_image(int channels,int height,int width) {
 int main() {
     int output_num = 196;
 
-    int channels = 51;
+    int channels = 196;
     int height = 28;
     int width = 28;
     int pad = 2;
@@ -604,7 +604,7 @@ int main() {
 
     printf("cpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 
-    check(G,D,m,n);
+    // check(G,D,m,n);
 
     // display_cpu(G,m,n);
     // printf("\n");
