@@ -537,9 +537,9 @@ float *get_image(int channels,int height,int width) {
 int main() {
     int output_num = 196;
 
-    int channels = 1;
-    int height = 4;
-    int width = 4;
+    int channels = 25;
+    int height = 28;
+    int width = 28;
     int pad = 0;
     int stride = 1;
     int kernel_size = 3;
@@ -567,29 +567,27 @@ int main() {
 
     float *image = get_image(channels,height,width);
 
-    transformToGpuFormat(B,image,height,width,channels,kernel_size,pad,stride);
-
     auto K=compile(gemm);
     K.setNumQPUs(12);
 
     clock_t start=clock();
+    transformToGpuFormat(B,image,height,width,channels,kernel_size,pad,stride);
     K(&A,&B,&C,m,n,k);
-    clock_t end=clock();
-
     TransToCpuFormat(m*n*16,C,G); 
+    clock_t end=clock();
 
     printf("gpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 
 
     Init_Weight_Cpu(A,channels,kernel_size,output_num);
 
-    im2col(image,channels,height,width,kernel_size,pad,stride,E);
-
-    start=clock();
-    // cpu_gemm(A,E,D,m,n,k-row_padding);
     for(int i=0;i<m*k;i++) {
       F[i] = A[i];
     }
+
+    start=clock();
+    // cpu_gemm(A,E,D,m,n,k-row_padding);
+    im2col(image,channels,height,width,kernel_size,pad,stride,E);
     sgemm(m,n,k-row_padding,F,E,D);
     end=clock();
 
@@ -598,10 +596,10 @@ int main() {
 
     check(G,D,m,n);
 
-    display_cpu(G,m,n);
-    printf("\n");
-    display_cpu(D,m,n);
-    printf("\n");
+    // display_cpu(G,m,n);
+    // printf("\n");
+    // display_cpu(D,m,n);
+    // printf("\n");
 
 }
 
