@@ -596,9 +596,8 @@ int main() {
     }
 
     start=clock();
-    // cpu_gemm(A,E,D,m,n,k-row_padding);
     im2col(image,channels,height,width,kernel_size,pad,stride,E);
-    sgemm(m,n,k-row_padding,F,E,D);
+    cpu_gemm(A,E,D,m,n,k-row_padding);
     end=clock();
 
 
