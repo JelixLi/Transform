@@ -10,7 +10,7 @@
 #include <sstream>
 #include <algorithm>
 #include <stdlib.h>
-
+#include <math.h>
 
 
 using namespace std;
@@ -41,7 +41,7 @@ constexpr const int MC = 384;
 
 constexpr const int KC = 384;
 
-constexpr const int NC = 4096;
+constexpr const int NC_ = 4096;
 
 constexpr const int MR = 4;
 
@@ -49,18 +49,18 @@ constexpr const int NR = 4;
 
 float A_[MC * KC] __attribute__ ((aligned (32)));
 
-float B_[KC * NC] __attribute__ ((aligned (32)));
+float B_[KC * NC_] __attribute__ ((aligned (32)));
 
 float C_[MR * NR] __attribute__ ((aligned (32)));
 
 float AB_[MR * NR] __attribute__ ((aligned (32)));
 
 
-void pack_MRxk(int k, const float *A, int incRowA, int incColA, float *buffer) {
-int j, a2 = incRowA, a3 = 2 * incRowA, a4 = 3 * incRowA;
+void pack_MRxk(int k, const float *A, int iNC_RowA, int iNC_ColA, float *buffer) {
+int j, a2 = iNC_RowA, a3 = 2 * iNC_RowA, a4 = 3 * iNC_RowA;
 for (j = 0; j < k; ++j) {
     // for (int i = 0; i < MR; ++i) {
-    //     buffer[i] = A[i * incRowA];
+    //     buffer[i] = A[i * iNC_RowA];
     // }
     buffer[0] = A[0];
     buffer[1] = A[a2];
@@ -71,24 +71,24 @@ for (j = 0; j < k; ++j) {
 }
 }
 
-void pack_A(int mc, int kc, const float *A, int incRowA, int incColA, float *buffer) {
+void pack_A(int mc, int kc, const float *A, int iNC_RowA, int iNC_ColA, float *buffer) {
 int mp = mc / MR;
 int _mr = mc % MR;
 int tmp1 = kc * MR;
-int tmp2 = MR * incRowA;
+int tmp2 = MR * iNC_RowA;
 int i, j;
 
 for (i = 0; i < mp; ++i) {
-    pack_MRxk(kc, A, incRowA, incColA, buffer);
+    pack_MRxk(kc, A, iNC_RowA, iNC_ColA, buffer);
     buffer += tmp1;
     A += tmp2;
     // buffer += kc * MR;
-    // A += MR * incRowA;
+    // A += MR * iNC_RowA;
 }
 if (_mr > 0) {
     for (j = 0; j < kc; ++j) {
         for (i = 0; i < _mr; ++i) {
-            buffer[i] = A[i * incRowA];
+            buffer[i] = A[i * iNC_RowA];
         }
         for (i = _mr; i < MR; ++i) {
             buffer[i] = 0.0;
@@ -99,7 +99,7 @@ if (_mr > 0) {
 }
 }
 
-void pack_kxNR(int k, const float *B, int incRowB, int incColB, float *buffer) {
+void pack_kxNR(int k, const float *B, int iNC_RowB, int iNC_ColB, float *buffer) {
 int i, j;
 for (i = 0; i < k; ++i) {
     for (j = 0; j < NR; ++j) {
@@ -107,19 +107,19 @@ for (i = 0; i < k; ++i) {
     }
     // float32x4_t bv = vld1q_f32(B);
     // vst1q_f32(buffer, bv);
-    B += incRowB;
+    B += iNC_RowB;
     buffer += NR;
 }
 }
 
-void pack_B(int kc, int nc, const float *B, int incRowB, int incColB, float *buffer) {
-int np = nc / NR;
-int _nr = nc % NR;
+void pack_B(int kc, int NC_, const float *B, int iNC_RowB, int iNC_ColB, float *buffer) {
+int np = NC_ / NR;
+int _nr = NC_ % NR;
 int tmp1 = kc * NR;
 int i, j;
 
 for (j = 0; j < np; ++j) {
-    pack_kxNR(kc, B, incRowB, incColB, buffer);
+    pack_kxNR(kc, B, iNC_RowB, iNC_ColB, buffer);
     B += NR;
     buffer += tmp1;
 }
@@ -132,13 +132,13 @@ if (_nr > 0) {
             buffer[j] = 0.0;
         }
         buffer += NR;
-        B += incRowB;
+        B += iNC_RowB;
     }
 }
 }
 
-void dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC,
-                       int incColC) {
+void dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int iNC_RowC,
+                       int iNC_ColC) {
 int i = 0;
 int j = 0;
 int l = 0;
@@ -158,13 +158,13 @@ for (l = 0; l < kc; ++l) {
 if (equal(beta, 0.0)) {
     for (j = 0; j < NR; ++j) {
         for (i = 0; i < MR; ++i) {
-            C[i * incRowC + j * incColC] = 0.0;
+            C[i * iNC_RowC + j * iNC_ColC] = 0.0;
         }
     }
 } else if (!equal(beta, 1.0)) {
     for (j = 0; j < NR; ++j) {
         for (i = 0; i < MR; ++i) {
-            C[i * incRowC + j * incColC] *= beta;
+            C[i * iNC_RowC + j * iNC_ColC] *= beta;
         }
     }
 }
@@ -172,60 +172,60 @@ if (equal(beta, 0.0)) {
 if (!equal(alpha, 1.0)) {
     for (j = 0; j < NR; ++j) {
         for (i = 0; i < MR; ++i) {
-            C[i * incRowC + j * incColC] += alpha * AB_[i + j * MR];
+            C[i * iNC_RowC + j * iNC_ColC] += alpha * AB_[i + j * MR];
         }
     }
 } else {
     for (j = 0; j < NR; ++j) {
         for (i = 0; i < MR; ++i) {
-            C[i * incRowC + j * incColC] += AB_[i + j * MR];
+            C[i * iNC_RowC + j * iNC_ColC] += AB_[i + j * MR];
         }
     }
 }
 }
 
 
-void dgeaxpy(int m, int n, float alpha, const float *X, int incRowX, int incColX, float *Y, int incRowY,
-                 int incColY) {
+void dgeaxpy(int m, int n, float alpha, const float *X, int iNC_RowX, int iNC_ColX, float *Y, int iNC_RowY,
+                 int iNC_ColY) {
 int i, j;
 if (!equal(alpha, 1.0)) {
     for (j = 0; j < n; ++j) {
         for (i = 0; i < m; ++i) {
-            Y[i * incRowY + j] += alpha * X[i + j * incColX];
+            Y[i * iNC_RowY + j] += alpha * X[i + j * iNC_ColX];
         }
     }
 } else {
     for (j = 0; j < n; ++j) {
         for (i = 0; i < m; ++i) {
-            Y[i * incRowY + j] += X[i + j * incColX];
+            Y[i * iNC_RowY + j] += X[i + j * iNC_ColX];
         }
     }
 }
 }
 
-void dgescal(int m, int n, float alpha, float *X, int incRowX, int incColX) {
+void dgescal(int m, int n, float alpha, float *X, int iNC_RowX, int iNC_ColX) {
 int i, j;
 if (!equal(alpha, 0.0)) {
     for (i = 0; i < m; ++i) {
         for (j = 0; j < n; ++j) {
-            X[i * incRowX + j] *= alpha;
+            X[i * iNC_RowX + j] *= alpha;
         }
     }
 } else {
     for (i = 0; i < m; ++i) {
         for (j = 0; j < n; ++j) {
-            X[i * incRowX + j] = 0.0;
+            X[i * iNC_RowX + j] = 0.0;
         }
     }
 }
 }
 
-void dgemm_macro_kernel(int mc, int nc, int kc, float alpha, float beta, float *C, int incRowC, int incColC) {
+void dgemm_macro_kernel(int mc, int NC_, int kc, float alpha, float beta, float *C, int iNC_RowC, int iNC_ColC) {
 int mp = (mc + MR - 1) / MR;
-int np = (nc + NR - 1) / NR;
+int np = (NC_ + NR - 1) / NR;
 
 int _mr = mc % MR;
-int _nr = nc % NR;
+int _nr = NC_ % NR;
 
 int i, j;
 
@@ -236,50 +236,50 @@ for (j = 0; j < np; ++j) {
         int mr = (i != mp - 1 || _mr == 0) ? MR : _mr;
 
         if (mr == MR && nr == NR) {
-            dgemm_micro_kernel(kc, alpha, &A_[i * kc * MR], &B_[j * kc * NR], beta, &C[i * MR * incRowC + j * NR], incRowC, incColC);
+            dgemm_micro_kernel(kc, alpha, &A_[i * kc * MR], &B_[j * kc * NR], beta, &C[i * MR * iNC_RowC + j * NR], iNC_RowC, iNC_ColC);
         } else {
             dgemm_micro_kernel(kc, alpha, &A_[i * kc * MR], &B_[j * kc * NR], 0.0, C_, 1, MR);
-            dgescal(mr, nr, beta, &C[i * MR * incRowC + j * NR], incRowC, incColC);
-            dgeaxpy(mr, nr, 1.0, C_, 1, MR, &C[i * MR * incRowC + j * NR], incRowC, incColC);
+            dgescal(mr, nr, beta, &C[i * MR * iNC_RowC + j * NR], iNC_RowC, iNC_ColC);
+            dgeaxpy(mr, nr, 1.0, C_, 1, MR, &C[i * MR * iNC_RowC + j * NR], iNC_RowC, iNC_ColC);
         }
     }
 }
 }
 
-void dgemm_nn(int m, int n, int k, float alpha, const float *A, int incRowA, int incColA, const float *B, int incRowB, int incColB, float beta, float *C, int incRowC, int incColC) {
+void dgemm_nn(int m, int n, int k, float alpha, const float *A, int iNC_RowA, int iNC_ColA, const float *B, int iNC_RowB, int iNC_ColB, float beta, float *C, int iNC_RowC, int iNC_ColC) {
 int mb = (m + MC - 1) / MC;
-int nb = (n + NC - 1) / NC;
+int nb = (n + NC_ - 1) / NC_;
 int kb = (k + KC - 1) / KC;
 
 int _mc = m % MC;
-int _nc = n % NC;
+int _NC_ = n % NC_;
 int _kc = k % KC;
 
-int mc, nc, kc;
+int mc, NC_, kc;
 int i, j, l;
 
 float _beta;
 
 if (equal(alpha, 0.0) ||  k == 0) {
-    dgescal(m, n, beta, C, incRowC, incColC);
+    dgescal(m, n, beta, C, iNC_RowC, iNC_ColC);
     return;
 }
 
 for (j = 0; j < nb; ++j) {
-    nc = (j != nb - 1 || _nc == 0) ? NC : _nc;
+    NC_ = (j != nb - 1 || _NC_ == 0) ? NC_ : _NC_;
 
     for (l = 0; l < kb; ++l) {
         kc = (l != kb - 1 || _kc == 0) ? KC : _kc;
         _beta = (l == 0) ? beta : 1.0;
 
-        pack_B(kc, nc, &B[l * KC * incRowB + j * NC], incRowB, incColB, B_);
+        pack_B(kc, NC_, &B[l * KC * iNC_RowB + j * NC_], iNC_RowB, iNC_ColB, B_);
 
         for (i = 0; i < mb; ++i) {
             mc = (i != mb - 1 || _mc == 0) ? MC : _mc;
 
-            pack_A(mc, kc, &A[i * MC * incRowA + l * KC], incRowA, incColA, A_);
+            pack_A(mc, kc, &A[i * MC * iNC_RowA + l * KC], iNC_RowA, iNC_ColA, A_);
 
-            dgemm_macro_kernel(mc, nc, kc, alpha, _beta, &C[i * MC * incRowC + j * NC], incRowC, incColC);
+            dgemm_macro_kernel(mc, NC_, kc, alpha, _beta, &C[i * MC * iNC_RowC + j * NC_], iNC_RowC, iNC_ColC);
         }
     }
 }
@@ -411,7 +411,7 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
 
     Int qpuNums = numQPUs();
 
-    Int inc = 16;
+    Int iNC_ = 16;
     Int ind = index();
     Int inm = me()*k;
 
@@ -432,14 +432,14 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
            gather(p);
            gather(q);
            sum = 0;
-           For(Int s=0,s<k,s=s+inc)
-              gather(p+inc);
-              gather(q+inc);
+           For(Int s=0,s<k,s=s+iNC_)
+              gather(p+iNC_);
+              gather(q+iNC_);
               receive(x);
               receive(y);
               sum = sum + x*y;
-              p=p+inc;
-              q=q+inc;
+              p=p+iNC_;
+              q=q+iNC_;
            End
            receive(x);
            receive(y);
