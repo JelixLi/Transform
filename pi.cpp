@@ -130,9 +130,9 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
 
     Int qpuNums = numQPUs();
 
-    Int inc=(qpuNums<<4);
-    Int ind=index();
-    Int inm=(me()<<4)*k;
+    Int inc = (qpuNums<<4);
+    Int ind = index();
+    Int inm = me()*k;
 
     Ptr<Float> first_p = A+ind+inm;
     Ptr<Float> first_q = B+ind;
@@ -146,8 +146,8 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
 
     For(Int r=me(),r<m,r=r+qpuNums) 
       For(Int c=0,c<n,c++)
-           p = first_p + ((r*k)<<4);
-           q = first_q + ((c*k)<<4);
+           p = first_p + (r*k);
+           q = first_q + (c*k);
            gather(p);
            gather(q);
            sum = 0;
