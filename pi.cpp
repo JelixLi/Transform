@@ -243,7 +243,7 @@ int main() {
     int width = 4;
     int pad = 0;
     int stride = 1;
-    int kernel_size = 3;
+    int kernel_size = 1;
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
@@ -299,13 +299,4 @@ int main() {
     display_cpu(D,m*16,n*16);
 
 }
-
-
-
-
- 
-
-
-
-
 
