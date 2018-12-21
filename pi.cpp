@@ -11,22 +11,11 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <math.h>
-
-
-using namespace std;
-
-#define GPU
-
-#ifdef GPU
 #include "QPULib.h"
-#endif
-
-#ifdef GPU
-
-
 
 
 using namespace std;
+
 
 bool equal(float a, float b) {
     const float EPSILON = 1e-5;
@@ -426,27 +415,7 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
     Float sum;
 
     For(Int r=me(),r<m,r=r+qpuNums) 
-      For(Int c=me(),c<n,c++)
-           p = first_p + ((r-me())*k);
-           q = first_q + (c*k);
-           gather(p);
-           gather(q);
-           sum = 0;
-           For(Int s=0,s<k,s=s+inc)
-              gather(p+inc);
-              gather(q+inc);
-              receive(x);
-              receive(y);
-              sum = sum + x*y;
-              p=p+inc;
-              q=q+inc;
-           End
-           receive(x);
-           receive(y);
-           store(sum,C + ind + ((r*n+c)<<4));
-      End 
-
-      For(Int c=0,c<me(),c++)
+      For(Int c=0,c<n,c++)
            p = first_p + ((r-me())*k);
            q = first_q + (c*k);
            gather(p);
@@ -470,7 +439,30 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
 }
 
 
-#endif
+void gemm_estimator(SharedArray<float> &A,SharedArray<float> &B,SharedArray<float> &C,int m,int n,int k) {
+
+    for(int i=0;i<m;i++) {
+      for(int j=0;j<n;j++) {
+        float sum[16] = {0};
+        for(int s=0;s<k;s+=16) {
+            for(int t=0;t<16;t++) {
+              sum[t] += A[i*k+s+t]*B[(s+t)*k+j];
+            }
+        }
+        for(int t=0;t<16;t++) {
+          C[i*n+j+t] = sum[t];
+        }
+      }
+    }
+
+}
+
+
+
+
+
+
+
 
 
 void Init_Weight_Gpu(SharedArray<float> &A,int channels,int kernel_size,int output_num) {
@@ -602,7 +594,8 @@ int main() {
 
     clock_t start=clock();
     transformToGpuFormat(B,image,height,width,channels,kernel_size,pad,stride);
-    K(&A,&B,&C,m,n,k);
+    gemm_estimator(A,B,C,m,n,k);
+    // K(&A,&B,&C,m,n,k);
     TransToCpuFormat(m*n*16,C,G); 
     clock_t end=clock();
 
