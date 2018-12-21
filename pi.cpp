@@ -254,14 +254,14 @@ int main() {
 
     int m = (kernel_size*kernel_size*output_num);
     int n = col_size;
-    int k = row_size / 16;
+    int k = row_size;
 
-    SharedArray<float> A(m*k*16),B(k*n*16),C(m*n*16);
-    float D[m*n*256];
+    SharedArray<float> A(m*k),B(k*n),C(m*n*16);
+    float D[m*n];
     float G[m*n];
-    float E[k*n*256];
+    float E[k*n];
 
-    Init(A,m,k*16);
+    Init(A,m,k);
 
     float *image = get_image(channels,height,width);
 
