@@ -197,7 +197,6 @@ void check(float *A,float *B,int m,int n) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
       if(int(A[i*n+j])!=int(B[i*n+j])) {
-          printf("%f  %f\n",A[i*n+j],B[i*n+j]);
           printf("error\n");
           return;
       }
@@ -269,7 +268,7 @@ int main() {
     transformToGpuFormat(B,image,height,width,channels,kernel_size,pad,stride);
 
     auto K=compile(gemm);
-    K.setNumQPUs(12);
+    K.setNumQPUs(9);
 
     clock_t start=clock();
     K(&A,&B,&C,m,n,k);
