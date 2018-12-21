@@ -144,7 +144,7 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
     Float y;
     Float sum;
 
-    For(Int r=0,r<m,r=r+qpuNums) 
+    For(Int r=me(),r<m,r=r+qpuNums) 
       For(Int c=0,c<n,c++)
            p = first_p + ((r*k)<<4);
            q = first_q + ((c*k)<<4);
