@@ -150,6 +150,7 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
            q = first_q + ((c*k)<<4);
            gather(p);
            gather(q);
+           sum = 0;
            For(Int s=0,s<k,s=s+inc)
               gather(p+inc);
               gather(q+inc);
