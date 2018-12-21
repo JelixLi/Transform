@@ -234,14 +234,16 @@ float *get_image(int channels,int height,int width) {
 
 int main() {
 
-    int output_num = 16;
+    // here assume that the weight data has already been ordered by 16 
+
+    int output_num = 12;
 
     int channels = 1;
     int height = 4;
     int width = 4;
     int pad = 0;
     int stride = 1;
-    int kernel_size = 3;
+    int kernel_size = 4;
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
