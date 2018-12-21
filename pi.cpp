@@ -495,11 +495,21 @@ void cpu_gemm(SharedArray<float> &A,float *B,float *C,int m,int n,int k) {
 }
 
 
+void show_errors(float *A,float *B,int m,int n) {
+  for(int i=0;i<m;i++) {
+    for(int j=0;j<n;j++) {
+          printf("%d ",(int(A[i*n+j])!=int(B[i*n+j])));  
+    }
+    printf("\n");
+  } 
+}
+
 void check(float *A,float *B,int m,int n) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
       if(int(A[i*n+j])!=int(B[i*n+j])) {
-          printf("error\n");
+          // printf("error\n");
+          show_errors(A,B,m,n);
           return;
       }
     }
@@ -538,11 +548,11 @@ int main() {
     int output_num = 196;
 
     int channels = 2;
-    int height = 2;
-    int width = 2;
+    int height = 4;
+    int width = 4;
     int pad = 0;
     int stride = 1;
-    int kernel_size = 2;
+    int kernel_size = 3;
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
@@ -596,10 +606,10 @@ int main() {
 
     check(G,D,m,n);
 
-    display_cpu(G,m,n);
-    printf("\n");
-    display_cpu(D,m,n);
-    printf("\n");
+    // display_cpu(G,m,n);
+    // printf("\n");
+    // display_cpu(D,m,n);
+    // printf("\n");
 
 }
 
