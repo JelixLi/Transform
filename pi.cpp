@@ -130,7 +130,7 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
 
     Int qpuNums = numQPUs();
 
-    Int inc = (qpuNums<<4);
+    Int inc = 16;
     Int ind = index();
     Int inm = me()*k;
 
