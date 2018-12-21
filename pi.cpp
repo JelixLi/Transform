@@ -550,7 +550,7 @@ int main() {
     int channels = 51;
     int height = 28;
     int width = 28;
-    int pad = 0;
+    int pad = 2;
     int stride = 1;
     int kernel_size = 3;
 
