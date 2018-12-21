@@ -392,7 +392,7 @@ void TransToCpuFormat(
             sum = 0;
         }
 
-        sum += gpu_vec_data[i];
+        sum += gpu_vec_data[i-1];
     }
 }
 
