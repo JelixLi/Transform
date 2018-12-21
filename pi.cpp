@@ -22,7 +22,7 @@ inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
 
 void im2col(const float *data_im, const int channels, const int height,
             const int width, const int kernel_size,
-            const int pad, const int stride, Ptr<Float> data_col) {
+            const int pad, const int stride, float *data_col) {
     const int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     const int output_w = (width + 2 * pad - kernel_size) / stride + 1;
     const int channel_size = height * width;
