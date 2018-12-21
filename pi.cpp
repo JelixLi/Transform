@@ -385,7 +385,7 @@ void TransToCpuFormat(
     SharedArray<float> &gpu_vec_data,
     float *cpu_data) {
 
-    int sum=0;
+    float sum=0;
     for(int i=1;i<=data_num;i++) {
         if(i%16==0) {
             *cpu_data++ = sum;
