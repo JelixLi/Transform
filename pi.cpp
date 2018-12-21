@@ -426,7 +426,27 @@ void gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
     Float sum;
 
     For(Int r=me(),r<m,r=r+qpuNums) 
-      For(Int c=0,c<n,c++)
+      For(Int c=me(),c<n,c++)
+           p = first_p + ((r-me())*k);
+           q = first_q + (c*k);
+           gather(p);
+           gather(q);
+           sum = 0;
+           For(Int s=0,s<k,s=s+inc)
+              gather(p+inc);
+              gather(q+inc);
+              receive(x);
+              receive(y);
+              sum = sum + x*y;
+              p=p+inc;
+              q=q+inc;
+           End
+           receive(x);
+           receive(y);
+           store(sum,C + ind + ((r*n+c)<<4));
+      End 
+
+      For(Int c=0,c<me(),c++)
            p = first_p + ((r-me())*k);
            q = first_q + (c*k);
            gather(p);
