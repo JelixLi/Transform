@@ -596,8 +596,8 @@ int main() {
 
     check(G,D,m,n);
 
-    // display_cpu(G,m,n);
-    // printf("\n");
+    display_cpu(G,m,n);
+    printf("\n");
     // display_cpu(D,m,n);
     // printf("\n");
 
