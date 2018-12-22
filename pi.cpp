@@ -386,13 +386,12 @@ void TransToCpuFormat(
     float *cpu_data) {
 
     float sum=0;
-    for(int i=1;i<=data_num;i++) {
-        if(i%16==0) {
+    for(int i=0;i<data_num;i++) {
+        sum += gpu_vec_data[i];
+        if((i+1)%16==0) {
             *cpu_data++ = sum;
             sum = 0;
         }
-
-        sum += gpu_vec_data[i-1];
     }
 }
 
