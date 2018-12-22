@@ -440,22 +440,15 @@ void gemm_estimator(SharedArray<float> &A,SharedArray<float> &B,SharedArray<floa
 
     for(int i=0;i<m;i++) {
       for(int j=0;j<n;j++) {
-        // float sum[16] = {0};
-        // for(int s=0;s<k;s+=16) {
-        //     for(int t=0;t<16;t++) {
-        //       sum[t] += A[i*k+s+t]*B[j*k+s+t];
-        //     }
-        // }
-        // for(int t=0;t<16;t++) {
-        //   C[(i*n+j)*16+t] = sum[t];
-        // }
-
-        float sum = 0;
-        for(int c=0;c<k;c++) {
-           sum += A[i*k+c]*B[j*k+c]; 
+        float sum[16] = {0};
+        for(int s=0;s<k;s+=16) {
+            for(int t=0;t<16;t++) {
+              sum[t] += A[i*k+s+t]*B[j*k+s+t];
+            }
         }
-        C[i*n+j] = sum;
-
+        for(int t=0;t<16;t++) {
+          C[(i*n+j)*16+t] = sum[t];
+        }
       }
     }
 
@@ -598,6 +591,7 @@ int main() {
 
     clock_t start=clock();
     transformToGpuFormat(B,image,height,width,channels,kernel_size,pad,stride);
+    display(B,k,n);
     gemm_estimator(A,B,C,m,n,k);
     // K(&A,&B,&C,m,n,k);
     TransToCpuFormat(m*n*16,C,G); 
@@ -620,7 +614,7 @@ int main() {
 
     printf("cpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 
-    check(G,D,m,n);
+    // check(G,D,m,n);
 
     // display_cpu(G,m,n);
     // printf("\n");
