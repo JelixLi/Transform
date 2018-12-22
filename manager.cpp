@@ -241,7 +241,7 @@ void GManager<T>::gpu_conv(
 
 template<typename T>
 void GManager<T>::Init_Gpu_Memory() {
-	_gp_array[0].alloc(20*(1<<20));
+	_gp_array[0].alloc(19*(1<<20));
 	_gp_array[1].alloc(20*(1<<20));
 	_gp_array[2].alloc(20*(1<<20));
 }
