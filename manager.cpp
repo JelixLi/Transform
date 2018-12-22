@@ -119,9 +119,6 @@ void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
 
 
 
-auto GemmKernel = compile(gpu_gemm);
-
-
 template<typename T>
 class GManager {
 public:
@@ -378,6 +375,8 @@ int main() {
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
+
+	auto GemmKernel = compile(gpu_gemm);
 
 	// GManager<float> gm(1);
 	// float *weight = get_weight(output_num,channels,kernel_size);
