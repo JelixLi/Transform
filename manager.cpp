@@ -127,7 +127,7 @@ private:
 
 
 template<typename T>
-void GManager::getOutputFromGpu(
+void GManager<T>::getOutputFromGpu(
 	SharedArray<T> &_shared_array_buffer,
 	T *output_data_buffer,
 	int data_size) {
@@ -144,7 +144,7 @@ void GManager::getOutputFromGpu(
 
 
 template<typename T>
-void GManager::gpu_conv(
+void GManager<T>::gpu_conv(
 	T *weight,
 	T *input,
 	T *output_buffer,
@@ -181,7 +181,7 @@ void GManager::gpu_conv(
 
 
 template<typename T>
-void GManager::Init_Gpu_Memory() {
+void GManager<T>::Init_Gpu_Memory() {
 	_gp_array[0].alloc(21*(1<<20));
 	_gp_array[1].alloc(21*(1<<20));
 	_gp_array[2].alloc(22*(1<<20));
@@ -189,7 +189,7 @@ void GManager::Init_Gpu_Memory() {
 
 
 template<typename T>
-void GManager::gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
+void GManager<T>::gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
     Int qpuNums = numQPUs();
 
     Int inc = 16;
@@ -231,13 +231,13 @@ void GManager::gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k
 
 
 template<typename T>
-GManager::GManager() {
+GManager<T>::GManager() {
 	Init_Gpu_Memory();
 }
 
 
 template<typename T>
-void GManager::LoadWeightIntoGpu(
+void GManager<T>::LoadWeightIntoGpu(
 	SharedArray<T> &_shared_array_buffer,
 	const T *input_data_buffer,
 	int data_size) {
@@ -248,7 +248,7 @@ void GManager::LoadWeightIntoGpu(
 
 
 template<typename T>
-T *GManager::TransWeight2GpuFormat(T *original_data,int channels,int kernel_size,int output_num) {
+T *GManager<T>::TransWeight2GpuFormat(T *original_data,int channels,int kernel_size,int output_num) {
   int size = channels*kernel_size*kernel_size;
   int padding = 16 - size % 16;
 
@@ -269,7 +269,7 @@ T *GManager::TransWeight2GpuFormat(T *original_data,int channels,int kernel_size
 
 
 template<typename T>
-void GManager::LoadInputIntoGpu(
+void GManager<T>::LoadInputIntoGpu(
     SharedArray<T> &_shared_array_buffer,
     const T *input_data_buffer,
     int input_height,
