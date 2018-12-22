@@ -382,7 +382,7 @@ void TransToCpuFormat(
     int data_num,
     SharedArray<float> &gpu_vec_data,
     float *cpu_data) {
-    printf("%d\n",data_num );
+
     float sum=0;
     for(int i=0;i<data_num;i++) {
         sum += gpu_vec_data[i];
@@ -553,34 +553,36 @@ float *get_image(int channels,int height,int width) {
     return image;
 }
 
+
+int output_num = 196;
+
+int channels = 2;
+int height = 20;
+int width = 20;
+int pad = 2;
+int stride = 1;
+int kernel_size = 3;
+
+int output_h = (height + 2 * pad - kernel_size) / stride + 1;
+int output_w = (width + 2 * pad - kernel_size) / stride + 1;
+
+int row_padding = 16 - (channels*kernel_size*kernel_size) % 16;
+
+int row_size = channels*kernel_size*kernel_size + row_padding;
+int col_size = output_h*output_w;
+
+
+int m = output_num;
+int n = col_size;
+int k = row_size;
+
+SharedArray<float> A(m*k),B(k*n),C(m*n*16);
+float F[m*k];
+float D[m*n];
+float G[m*n];
+float E[k*n];
+
 int main() {
-    int output_num = 196;
-
-    int channels = 2;
-    int height = 20;
-    int width = 20;
-    int pad = 2;
-    int stride = 1;
-    int kernel_size = 3;
-
-    int output_h = (height + 2 * pad - kernel_size) / stride + 1;
-    int output_w = (width + 2 * pad - kernel_size) / stride + 1;
-
-    int row_padding = 16 - (channels*kernel_size*kernel_size) % 16;
-
-    int row_size = channels*kernel_size*kernel_size + row_padding;
-    int col_size = output_h*output_w;
-
-
-    int m = output_num;
-    int n = col_size;
-    int k = row_size;
-
-    SharedArray<float> A(m*k),B(k*n),C(m*n*16);
-    float F[m*k];
-    float D[m*n];
-    float G[m*n];
-    float E[k*n];
 
     Init_Weight_Gpu(A,channels,kernel_size,output_num);
 
@@ -613,7 +615,7 @@ int main() {
 
     printf("cpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 
-    // check(G,D,m,n);
+    check(G,D,m,n);
 
     // display_cpu(G,m,n);
     // printf("\n");
