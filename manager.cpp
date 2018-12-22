@@ -362,7 +362,6 @@ float *get_input(int height,int width,int channels) {
 	return input;
 }
 
-extern Kernel<Ptr<Int>, Ptr<Int>, Ptr<Int>,Int,Int,Int> &GemmKernel;
 
 int main() {
 
@@ -378,7 +377,7 @@ int main() {
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
 
-	GemmKernel = compile(gpu_gemm);
+	Kernel<Ptr<Int>, Ptr<Int>, Ptr<Int>,Int,Int,Int> &GemmKernel = compile(gpu_gemm);
 
 	// GManager<float> gm(1);
 	// float *weight = get_weight(output_num,channels,kernel_size);
