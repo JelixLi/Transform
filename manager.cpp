@@ -243,7 +243,7 @@ template<typename T>
 void GManager<T>::Init_Gpu_Memory() {
 	_gp_array[0].alloc(21*(1<<20));
 	_gp_array[1].alloc(21*(1<<20));
-	_gp_array[2].alloc(22*(1<<20));
+	_gp_array[2].alloc(21*(1<<20));
 }
 
 
