@@ -178,7 +178,7 @@ private:
 
 template<typename T>
 void GManager<T>::Init_Kernel(int gpu_num) {
-    GemmKernel.setNumQPUs(gpu_num);
+    // GemmKernel.setNumQPUs(gpu_num);
 }
 
 
