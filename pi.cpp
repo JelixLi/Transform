@@ -559,8 +559,8 @@ int main() {
     int output_num = 196;
 
     int channels = 2;
-    int height = 4;
-    int width = 4;
+    int height = 20;
+    int width = 20;
     int pad = 2;
     int stride = 1;
     int kernel_size = 3;
