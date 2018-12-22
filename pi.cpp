@@ -336,9 +336,6 @@ void transformToGpuFormat(
 
     SharedArray<float> &output_data=_shared_array_buffer;
 
-    const int output_h = (input_height + 2 * pad - kernel_size) / stride + 1;
-    const int output_w = (input_width + 2 * pad - kernel_size) / stride + 1;
-
     const int row_padding = 16 - (input_channel*kernel_size*kernel_size) % 16;
 
     const float *input_data;
@@ -361,17 +358,16 @@ void transformToGpuFormat(
                         if(is_a_ge_zero_and_a_lt_b(new_row,input_height)&&is_a_ge_zero_and_a_lt_b(new_col,input_width)) {
                             output_data[array_pos++] = input_data[new_row*input_width+new_col];
                         } else {
-                            output_data[array_pos++] = 0;
+                            output_data[array_pos++] = 0.0;
                         }            
 
-                        printf("%d\n",array_pos);   
                     }
                 }
 
             }
 
             for(int i=0;i<row_padding;i++) {
-                 output_data[array_pos++] = 0;
+                 output_data[array_pos++] = 0.0;
             }
 
         }
@@ -444,15 +440,22 @@ void gemm_estimator(SharedArray<float> &A,SharedArray<float> &B,SharedArray<floa
 
     for(int i=0;i<m;i++) {
       for(int j=0;j<n;j++) {
-        float sum[16] = {0};
-        for(int s=0;s<k;s+=16) {
-            for(int t=0;t<16;t++) {
-              sum[t] += A[i*k+s+t]*B[j*k+s+t];
-            }
+        // float sum[16] = {0};
+        // for(int s=0;s<k;s+=16) {
+        //     for(int t=0;t<16;t++) {
+        //       sum[t] += A[i*k+s+t]*B[j*k+s+t];
+        //     }
+        // }
+        // for(int t=0;t<16;t++) {
+        //   C[(i*n+j)*16+t] = sum[t];
+        // }
+
+        float sum = 0;
+        for(int c=0;c<k;c++) {
+           sum += A[i*k+c]*B[j*k+c]; 
         }
-        for(int t=0;t<16;t++) {
-          C[(i*n+j)*16+t] = sum[t];
-        }
+        C[i*n+j] = sum;
+
       }
     }
 
@@ -617,7 +620,7 @@ int main() {
 
     printf("cpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 
-    // check(G,D,m,n);
+    check(G,D,m,n);
 
     // display_cpu(G,m,n);
     // printf("\n");
