@@ -233,9 +233,9 @@ void GManager<T>::gpu_conv(
 
 template<typename T>
 void GManager<T>::Init_Gpu_Memory() {
-	_gp_array[0].alloc((1<<20));
-	_gp_array[1].alloc((1<<20));
-	_gp_array[2].alloc((1<<20));
+	_gp_array[0].alloc(1*(1<<20));
+	_gp_array[1].alloc(1*(1<<20));
+	_gp_array[2].alloc(1*(1<<20));
 }
 
 
@@ -359,36 +359,39 @@ float *get_input(int height,int width,int channels) {
 
 int main() {
 
-    int output_num = 2;
+ //    int output_num = 2;
 
-    int channels = 2;
-    int height = 4;
-    int width = 4;
-    int pad = 2;
-    int stride = 2;
-    int kernel_size = 3;
+ //    int channels = 2;
+ //    int height = 4;
+ //    int width = 4;
+ //    int pad = 2;
+ //    int stride = 2;
+ //    int kernel_size = 3;
 
-    int output_h = (height + 2 * pad - kernel_size) / stride + 1;
-    int output_w = (width + 2 * pad - kernel_size) / stride + 1;
+ //    int output_h = (height + 2 * pad - kernel_size) / stride + 1;
+ //    int output_w = (width + 2 * pad - kernel_size) / stride + 1;
 
-	auto GemmKernel = compile(gpu_gemm);
-	GemmKernel.setNumQPUs(1);
+	// auto GemmKernel = compile(gpu_gemm);
+	// GemmKernel.setNumQPUs(1);
 
-	GManager<float> gm;
-	float *weight = get_weight(output_num,channels,kernel_size);
-	float *input = get_input(height,width,channels);
-	float *output = new float[output_h*output_w];
+	// GManager<float> gm;
+	// float *weight = get_weight(output_num,channels,kernel_size);
+	// float *input = get_input(height,width,channels);
+	// float *output = new float[output_h*output_w];
 
-	float *gpu_format_weight = gm.TransWeight2GpuFormat(weight,channels,kernel_size,output_num);
+	// float *gpu_format_weight = gm.TransWeight2GpuFormat(weight,channels,kernel_size,output_num);
 
-	gm.gpu_conv(
-		gpu_format_weight,
-		input,output,height,
-		width,channels,
-		kernel_size,
-		output_num,
-		pad,
-		stride,
-		GemmKernel); 
+	// gm.gpu_conv(
+	// 	gpu_format_weight,
+	// 	input,output,height,
+	// 	width,channels,
+	// 	kernel_size,
+	// 	output_num,
+	// 	pad,
+	// 	stride,
+	// 	GemmKernel); 
+
+	SharedArray<float> A;
+	A.alloc(1<<20);
 
 }
