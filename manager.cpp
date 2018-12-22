@@ -380,12 +380,12 @@ int main() {
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
 
 	GManager<float> gm(1);
-	float *weight = get_weight(output_num,channels,kernel_size);
-	float *input = get_input(height,width,channels);
-	float *output = new float[output_h*output_w];
+	// float *weight = get_weight(output_num,channels,kernel_size);
+	// float *input = get_input(height,width,channels);
+	// float *output = new float[output_h*output_w];
 
-	float *gpu_format_weight = gm.TransWeight2GpuFormat(weight,channels,kernel_size,output_num);
+	// float *gpu_format_weight = gm.TransWeight2GpuFormat(weight,channels,kernel_size,output_num);
 
-	gm.gpu_conv(gpu_format_weight,input,output,height,width,channels,kernel_size,output_num,pad,stride); 
+	// gm.gpu_conv(gpu_format_weight,input,output,height,width,channels,kernel_size,output_num,pad,stride); 
 
 }
