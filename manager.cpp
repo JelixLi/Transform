@@ -392,6 +392,6 @@ int main() {
 	// 	GemmKernel); 
 
 	SharedArray<float> A;
-	A.alloc(1<<19+1<<18);
+	A.alloc((1<<19)+(1<<18));
 
 }
