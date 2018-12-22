@@ -77,6 +77,50 @@ void SharedArray<T>::dealloc() {
 #endif 
 
 
+void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
+    Int qpuNums = numQPUs();
+
+    Int inc = 16;
+    Int ind = index();
+    Int inm = me()*k;
+
+    Ptr<Float> first_p = A+ind+inm;
+    Ptr<Float> first_q = B+ind;
+
+    Ptr<Float> p;
+    Ptr<Float> q;
+
+    Float x;
+    Float y;
+    Float sum;
+
+    For(Int r=me(),r<m,r=r+qpuNums) 
+      For(Int c=0,c<n,c++)
+           p = first_p + ((r-me())*k);
+           q = first_q + (c*k);
+           gather(p);
+           gather(q);
+           sum = 0;
+           For(Int s=0,s<k,s=s+inc)
+              gather(p+inc);
+              gather(q+inc);
+              receive(x);
+              receive(y);
+              sum = sum + x*y;
+              p=p+inc;
+              q=q+inc;
+           End
+           receive(x);
+           receive(y);
+           store(sum,C + ind + ((r*n+c)<<4));
+      End 
+    End 	
+}
+
+
+
+auto GemmKernel = compile(gpu_gemm);
+
 
 template<typename T>
 class GManager {
@@ -133,14 +177,11 @@ private:
 
 	static SharedArray<T> _gp_array[3];
 
-	static auto GemmKernel;
 };
 
 template<typename T>
 void Init_Kernel(int gpu_num) {
-	auto K=compile(gpu_gemm);
-    K.setNumQPUs(gpu_gemm);
-    GemmKernel = K;
+    GemmKernel.setNumQPUs(gpu_num);
 }
 
 
@@ -205,47 +246,6 @@ void GManager<T>::Init_Gpu_Memory() {
 	_gp_array[2].alloc(22*(1<<20));
 }
 
-
-template<typename T>
-void GManager<T>::gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
-    Int qpuNums = numQPUs();
-
-    Int inc = 16;
-    Int ind = index();
-    Int inm = me()*k;
-
-    Ptr<Float> first_p = A+ind+inm;
-    Ptr<Float> first_q = B+ind;
-
-    Ptr<Float> p;
-    Ptr<Float> q;
-
-    Float x;
-    Float y;
-    Float sum;
-
-    For(Int r=me(),r<m,r=r+qpuNums) 
-      For(Int c=0,c<n,c++)
-           p = first_p + ((r-me())*k);
-           q = first_q + (c*k);
-           gather(p);
-           gather(q);
-           sum = 0;
-           For(Int s=0,s<k,s=s+inc)
-              gather(p+inc);
-              gather(q+inc);
-              receive(x);
-              receive(y);
-              sum = sum + x*y;
-              p=p+inc;
-              q=q+inc;
-           End
-           receive(x);
-           receive(y);
-           store(sum,C + ind + ((r*n+c)<<4));
-      End 
-    End 	
-}
 
 
 template<typename T>
