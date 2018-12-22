@@ -362,7 +362,9 @@ void transformToGpuFormat(
                             output_data[array_pos++] = input_data[new_row*input_width+new_col];
                         } else {
                             output_data[array_pos++] = 0;
-                        }               
+                        }            
+
+                        printf("%d\n",array_pos);   
                     }
                 }
 
@@ -615,7 +617,7 @@ int main() {
 
     printf("cpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 
-    check(G,D,m,n);
+    // check(G,D,m,n);
 
     // display_cpu(G,m,n);
     // printf("\n");
