@@ -156,7 +156,8 @@ public:
 		int kernel_size,
 		int output_num,
 		int pad,
-		int stride);
+		int stride,
+		auto GemmKernel);
 
 
 	T *TransWeight2GpuFormat(T *original_data,int channels,int kernel_size,int output_num);
