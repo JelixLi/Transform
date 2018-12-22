@@ -382,7 +382,7 @@ void TransToCpuFormat(
     int data_num,
     SharedArray<float> &gpu_vec_data,
     float *cpu_data) {
-
+    printf("%d\n",data_num );
     float sum=0;
     for(int i=0;i<data_num;i++) {
         sum += gpu_vec_data[i];
@@ -591,7 +591,6 @@ int main() {
 
     clock_t start=clock();
     transformToGpuFormat(B,image,height,width,channels,kernel_size,pad,stride);
-    display(B,k,n);
     gemm_estimator(A,B,C,m,n,k);
     // K(&A,&B,&C,m,n,k);
     TransToCpuFormat(m*n*16,C,G); 
