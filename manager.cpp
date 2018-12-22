@@ -11,6 +11,9 @@
 #include <math.h>
 
 
+#define GPU
+
+
 #ifdef GPU
 #include "QPULib.h"
 #endif
@@ -124,7 +127,7 @@ private:
 
 
 template<typename T>
-void getOutputFromGpu(
+void GManager::getOutputFromGpu(
 	SharedArray<T> &_shared_array_buffer,
 	T *output_data_buffer,
 	int data_size) {
@@ -141,7 +144,7 @@ void getOutputFromGpu(
 
 
 template<typename T>
-void gpu_conv(
+void GManager::gpu_conv(
 	T *weight,
 	T *input,
 	T *output_buffer,
