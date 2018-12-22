@@ -77,10 +77,11 @@ void SharedArray<T>::dealloc() {
 #endif 
 
 
+
 template<typename T>
 class GManager {
 public:
-	GManager();
+	GManager(int gpu_num);
 
 	void LoadInputIntoGpu(
 		SharedArray<T> &_shared_array_buffer,
@@ -122,8 +123,25 @@ public:
 private:
 	void Init_Gpu_Memory();
 
+	void Init_Kernel(gpu_num);
+
+
+	inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
+	    return static_cast<unsigned>(a) < static_cast<unsigned>(b);
+	}
+
+
 	SharedArray<T> _gp_array[3];
+
+	auto GemmKernel;
 };
+
+template<typename T>
+void Init_Kernel(gpu_num) {
+	auto K=compile(gpu_gemm);
+    K.setNumQPUs(gpu_gemm);
+    GemmKernel = K;
+}
 
 
 template<typename T>
@@ -147,7 +165,7 @@ template<typename T>
 void GManager<T>::gpu_conv(
 	T *weight,
 	T *input,
-	T *output_buffer,
+	T *output,
 	int height,
 	int width,
 	int channels,
@@ -175,7 +193,7 @@ void GManager<T>::gpu_conv(
 
 	LoadWeightIntoGpu(weight_buffer,weight,m*k);
 	LoadInputIntoGpu(input_buffer,input,height,width,channels,kernel_size,pad,stride);
-	gpu_gemm(&weight_buffer,&input_buffer,&output_buffer,m,n,k);
+	GemmKernel(&weight_buffer,&input_buffer,&output_buffer,m,n,k);
 	getOutputFromGpu(output_buffer,output,m*n*16);
 }
 
@@ -231,8 +249,9 @@ void GManager<T>::gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,In
 
 
 template<typename T>
-GManager<T>::GManager() {
+GManager<T>::GManager(int gpu_num) {
 	Init_Gpu_Memory();
+	Init_Kernel(gpu_num);
 }
 
 
