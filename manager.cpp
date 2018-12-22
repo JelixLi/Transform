@@ -362,7 +362,7 @@ float *get_input(int height,int width,int channels) {
 	return input;
 }
 
-Kernel<Ptr<Int>, Ptr<Int>, Ptr<Int>> GemmKernel;
+extern Kernel<Ptr<Int>, Ptr<Int>, Ptr<Int>,Int m,Int n,Int k> GemmKernel;
 
 int main() {
 
