@@ -123,7 +123,7 @@ public:
 private:
 	void Init_Gpu_Memory();
 
-	void Init_Kernel(gpu_num);
+	void Init_Kernel(int gpu_num);
 
 
 	inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
@@ -131,13 +131,13 @@ private:
 	}
 
 
-	SharedArray<T> _gp_array[3];
+	static SharedArray<T> _gp_array[3];
 
-	auto GemmKernel;
+	static auto GemmKernel;
 };
 
 template<typename T>
-void Init_Kernel(gpu_num) {
+void Init_Kernel(int gpu_num) {
 	auto K=compile(gpu_gemm);
     K.setNumQPUs(gpu_gemm);
     GemmKernel = K;
@@ -379,7 +379,7 @@ int main() {
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
 
-	GManager<float> gm;
+	GManager<float> gm(1);
 	float *weight = get_weight(output_num,channels,kernel_size);
 	float *input = get_input(height,width,channels);
 	float *output = new float[output_h*output_w];
