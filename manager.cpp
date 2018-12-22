@@ -175,7 +175,7 @@ private:
 	}
 
 
-	static SharedArray<T> _gp_array[3];
+	SharedArray<T> _gp_array[3];
 
 };
 
