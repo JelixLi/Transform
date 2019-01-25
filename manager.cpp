@@ -11,9 +11,6 @@
 #include <math.h>
 
 
-#define GPU
-
-
 #ifdef GPU
 #include "QPULib.h"
 #endif
@@ -233,9 +230,9 @@ void GManager<T>::gpu_conv(
 
 template<typename T>
 void GManager<T>::Init_Gpu_Memory() {
-	_gp_array[0].alloc(1*(1<<20));
-	_gp_array[1].alloc(1*(1<<20));
-	_gp_array[2].alloc(1*(1<<20));
+	_gp_array[0].alloc(733409/3);
+	_gp_array[1].alloc(733409/3);
+	_gp_array[2].alloc(733409/3+2);
 }
 
 
@@ -391,7 +388,9 @@ int main() {
 	// 	stride,
 	// 	GemmKernel); 
 
-	SharedArray<float> A;
-	A.alloc((1<<19)+(1<<17)+(1<<16)+(1<<13)+(1<<12)+(1<<9)+(1<<8)+(1<<5)+(1<<4)+(1<<3)+1);
+	// SharedArray<float> A;
+	// A.alloc((1<<19)+(1<<17)+(1<<16)+(1<<13)+(1<<12)+(1<<9)+(1<<8)+(1<<5)+(1<<4)+(1<<3)+1);   //734009
+
+  GManager<float> gm;
 
 }
