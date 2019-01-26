@@ -207,40 +207,40 @@ void GManager<T>::gpu_conv(
 	int stride,
 	auto GemmKernel) {
 
-    int output_h = (height + 2 * pad - kernel_size) / stride + 1;
-    int output_w = (width + 2 * pad - kernel_size) / stride + 1;
+   //  int output_h = (height + 2 * pad - kernel_size) / stride + 1;
+   //  int output_w = (width + 2 * pad - kernel_size) / stride + 1;
 
-    int row_padding = 16 - (channels*kernel_size*kernel_size) % 16;
+   //  int row_padding = 16 - (channels*kernel_size*kernel_size) % 16;
 
-    int row_size = channels*kernel_size*kernel_size + row_padding;
-    int col_size = output_h*output_w;
+   //  int row_size = channels*kernel_size*kernel_size + row_padding;
+   //  int col_size = output_h*output_w;
 
-    int m = output_num;
-    int n = col_size;
-    int k = row_size;
+   //  int m = output_num;
+   //  int n = col_size;
+   //  int k = row_size;
 
 
-  	SharedArray<T> &weight_buffer = _gp_array[0];
-  	SharedArray<T> &input_buffer = _gp_array[1];
-  	SharedArray<T> &output_buffer = _gp_array[2];
+  	// SharedArray<T> &weight_buffer = _gp_array[0];
+  	// SharedArray<T> &input_buffer = _gp_array[1];
+  	// SharedArray<T> &output_buffer = _gp_array[2];
 
-    int group = std::max(m*k,std::max(k*n,m*n)) / Max_GPU_Memory + 1;
-    int weight_offset,weight_group_size;
-    int output_offset,output_group_size;
-    int kernel_group_size;
+   //  int group = std::max(m*k,std::max(k*n,m*n)) / Max_GPU_Memory + 1;
+   //  int weight_offset,weight_group_size;
+   //  int output_offset,output_group_size;
+   //  int kernel_group_size;
 
-    for(int i=0;i<group;i++) {
-      weight_offset = i*m*k/group;
-      weight_group_size = std::min(m*k/group,m*k-weight_offset);
-      output_offset = i*m*n/group;
-      output_group_size = std::min(m*n/group,m*n-output_offset)*16;
-      kernel_group_size = std::min(m/group,m-i*m/group);
+   //  for(int i=0;i<group;i++) {
+   //    weight_offset = i*m*k/group;
+   //    weight_group_size = std::min(m*k/group,m*k-weight_offset);
+   //    output_offset = i*m*n/group;
+   //    output_group_size = std::min(m*n/group,m*n-output_offset)*16;
+   //    kernel_group_size = std::min(m/group,m-i*m/group);
 
-      LoadWeightIntoGpu(weight_buffer,weight+weight_offset,weight_group_size);
-      LoadInputIntoGpu(input_buffer,input,height,width,channels,kernel_size,pad,stride);
-      // GemmKernel(&weight_buffer,&input_buffer,&output_buffer,kernel_group_size,n,k);
-      getOutputFromGpu(output_buffer,output+output_offset,output_group_size);
-    }
+   //    LoadWeightIntoGpu(weight_buffer,weight+weight_offset,weight_group_size);
+   //    LoadInputIntoGpu(input_buffer,input,height,width,channels,kernel_size,pad,stride);
+   //    GemmKernel(&weight_buffer,&input_buffer,&output_buffer,kernel_group_size,n,k);
+   //    getOutputFromGpu(output_buffer,output+output_offset,output_group_size);
+   //  }
 }
 
 
