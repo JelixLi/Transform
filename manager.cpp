@@ -706,7 +706,7 @@ int main() {
     float *output = new float[output_h*output_w];
 
     float *A = weight;
-    float *B;
+    float *B = new float[kernel_size*kernel_size*channels*output_h*output_w];
     float *C = output;
 
     int m = output_num;
