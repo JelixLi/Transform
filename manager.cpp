@@ -973,8 +973,8 @@ int main() {
     int height = 227;
     int width = 227;
     int pad = 0;
-    int stride = 1;
-    int kernel_size = 7;
+    int stride = 2;
+    int kernel_size = 10;
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1; 
     int output_w = (width + 2 * pad - kernel_size) / stride + 1; 
