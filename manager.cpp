@@ -205,8 +205,8 @@ void GManager<T>::gpu_conv(
       &input_buffer,
       &output_buffer,
       64,
-      5000,
-      2);
+      64,
+      64);
 
   //   int Gpu_Memory_Basic_Block = Max_GPU_Memory/k/3;
 
