@@ -234,6 +234,11 @@ void GManager<T>::gpu_conv(
       output_offset = i*m*n/group;
       output_group_size = std::min(m*n/group,m*n-output_offset)*16;
 
+      cout<<weight_offset<<endl;
+      cout<<weight_group_size<<endl;
+      cout<<output_offset<<endl;
+      cout<<output_group_size<<endl;
+
       LoadWeightIntoGpu(weight_buffer,weight+weight_offset,weight_group_size);
       LoadInputIntoGpu(input_buffer,input,height,width,channels,kernel_size,pad,stride);
       GemmKernel(&weight_buffer,&input_buffer,&output_buffer,m/group,n,k);
