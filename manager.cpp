@@ -969,12 +969,12 @@ int main() {
 
     int output_num = 64;
 
-    int channels = 3;
-    int height = 227;
-    int width = 227;
+    int channels = 192;
+    int height = 10;
+    int width = 10;
     int pad = 0;
-    int stride = 2;
-    int kernel_size = 10;
+    int stride = 1;
+    int kernel_size = 3;
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1; 
     int output_w = (width + 2 * pad - kernel_size) / stride + 1; 
