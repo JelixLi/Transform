@@ -142,7 +142,6 @@ public:
 		T *output_data_buffer,
 		int data_size);
 
-	void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k);
 
 	void gpu_conv(
 		T *weight,
@@ -155,7 +154,7 @@ public:
 		int output_num,
 		int pad,
 		int stride,
-		auto GemmKernel);
+		auto& GemmKernel);
 
 
 	T *TransWeight2GpuFormat(T *original_data,int channels,int kernel_size,int output_num);
@@ -205,7 +204,7 @@ void GManager<T>::gpu_conv(
 	int output_num,
 	int pad,
 	int stride,
-	auto GemmKernel) {
+	auto& GemmKernel) {
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
@@ -370,10 +369,10 @@ float *get_input(int height,int width,int channels) {
 	return input;
 }
 
-auto GemmKernel = compile(gpu_gemm);
 
 int main() {
 
+    auto GemmKernel = compile(gpu_gemm);
     GemmKernel.setNumQPUs(1);
 
     int output_num = 1;
