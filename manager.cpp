@@ -709,6 +709,10 @@ int main() {
     float *B;
     float *C = output;
 
+    int m = output_num;
+    int k = channels*kernel_size*kernel_size;
+    int n = output_w*output_h;
+
     im2col(input,channels,height,width,kernel_size,pad,stride,B);
 
     sgemm(m,n,k,A,B,C);
