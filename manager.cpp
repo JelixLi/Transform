@@ -286,6 +286,7 @@ T *GManager<T>::TransWeight2GpuFormat(T *original_data,int channels,int kernel_s
           formated_data[a_pos++] = 0;
       }
   }
+  return formated_data;
 }
 
 
