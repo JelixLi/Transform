@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <math.h>
 
+#define GPU
 
 #ifdef GPU
 #include "QPULib.h"
