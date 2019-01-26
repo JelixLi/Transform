@@ -375,13 +375,13 @@ int main() {
     auto GemmKernel = compile(gpu_gemm);
     GemmKernel.setNumQPUs(1);
 
-    int output_num = 1;
+    int output_num = 3;
 
-    int channels = 1;
+    int channels = 5;
     int height = 4;
     int width = 4;
-    int pad = 0;
-    int stride = 1;
+    int pad = 2;
+    int stride = 2;
     int kernel_size = 3;
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
