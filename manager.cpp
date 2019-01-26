@@ -692,36 +692,29 @@ int main() {
     int output_num = 64;
 
     int channels = 3;
-    int height = 224;
-    int width = 224;
+    int height = 227;
+    int width = 227;
     int pad = 0;
-    int stride = 1;
+    int stride = 2;
     int kernel_size = 3;
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
 
-    // float *weight = get_weight(output_num,channels,kernel_size);
-    // float *input = get_input(height,width,channels);
-    // float *output = new float[output_h*output_w];
+    float *weight = get_weight(output_num,channels,kernel_size);
+    float *input = get_input(height,width,channels);
+    float *output = new float[output_h*output_w];
 
-    // float *A = weight;
-    // float *B = new float[kernel_size*kernel_size*channels*output_h*output_w];
-    // float *C = output;
-
-    // int m = output_num;
-    // int k = channels*kernel_size*kernel_size;
-    // int n = output_w*output_h;
-
-    // im2col(input,channels,height,width,kernel_size,pad,stride,B);
-
-    int m = 1000;
-    int n = 1000;
-    int k = 1000;
+    int m = output_num;
+    int k = channels*kernel_size*kernel_size;
+    int n = output_w*output_h;
 
     float *A = new float[m*k];
     float *B = new float[k*n];
     float *C = new float[m*n];
+
+
+    // im2col(input,channels,height,width,kernel_size,pad,stride,B);
 
     sgemm(m,n,k,A,B,C);
 
