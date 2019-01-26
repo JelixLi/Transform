@@ -412,18 +412,18 @@ int main() {
       pad,
       stride);
 
-    gm.gpu_conv(
-      weight,
-      col_data,
-      output,
-      height,
-      width,
-      channels,
-      kernel_size,
-      output_num,
-      pad,
-      stride,
-      GemmKernel);
+    // gm.gpu_conv(
+    //   weight,
+    //   col_data,
+    //   output,
+    //   height,
+    //   width,
+    //   channels,
+    //   kernel_size,
+    //   output_num,
+    //   pad,
+    //   stride,
+    //   GemmKernel);
 
 }
 
