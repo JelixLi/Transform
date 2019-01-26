@@ -407,7 +407,6 @@
 
 // }
 
-
 #include <stdlib.h>
 #include "QPULib.h"
 
@@ -431,7 +430,7 @@ void Init() {
   auto k = compile(gcd);
 
   // Allocate and initialise arrays shared between ARM and GPU
-  SharedArray<int> a(256), b(256), r(256);
+  SharedArray<int> a(733409/3), b(733409/3), r(733409/3);
   srand(0);
   for (int i = 0; i < 16; i++) {
     a[i] = 100 + (rand() % 100);
