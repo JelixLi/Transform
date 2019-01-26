@@ -231,13 +231,13 @@ void GManager<T>::gpu_conv(
           input_group_size,
           k);
 
-        GemmKernel(
-          &weight_buffer,
-          &input_buffer,
-          &output_buffer,
-          weight_group_size,
-          input_group_size,
-          k);
+        // GemmKernel(
+        //   &weight_buffer,
+        //   &input_buffer,
+        //   &output_buffer,
+        //   weight_group_size,
+        //   input_group_size,
+        //   k);
 
         GetOutputFromGpu(
           output_buffer,
@@ -412,18 +412,18 @@ int main() {
       pad,
       stride);
 
-    // gm.gpu_conv(
-    //   weight,
-    //   col_data,
-    //   output,
-    //   height,
-    //   width,
-    //   channels,
-    //   kernel_size,
-    //   output_num,
-    //   pad,
-    //   stride,
-    //   GemmKernel);
+    gm.gpu_conv(
+      weight,
+      col_data,
+      output,
+      height,
+      width,
+      channels,
+      kernel_size,
+      output_num,
+      pad,
+      stride,
+      GemmKernel);
 
 }
 
