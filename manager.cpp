@@ -985,9 +985,9 @@ int main() {
     // int k = channels*kernel_size*kernel_size; 
     // int n = output_w*output_h; 
 
-    int m = 64; 
-    int k = 27; 
-    int n = 113*113; 
+    int m = 1024; 
+    int k = 1024; 
+    int n = 1024; 
 
     float *A = new float[m*k];
     float *B = new float[k*n];
@@ -995,7 +995,7 @@ int main() {
 
 
     clock_t start=clock();
-    im2col(input,channels,height,width,kernel_size,pad,stride,B);
+    // im2col(input,channels,height,width,kernel_size,pad,stride,B);
     Gemmer gm;
     gm.sgemm(m,n,k,A,B,C);
     clock_t end=clock();
