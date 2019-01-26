@@ -987,16 +987,16 @@ int main() {
     int k = channels*kernel_size*kernel_size; 
     int n = output_w*output_h; 
 
-    float *A = new float[m*k];
+    float *A = weight;
     float *B = new float[k*n];
-    float *C = new float[m*n];
+    float *C = output;
 
-    cout<<m<<" "<<n<<" "<<k<<endl;
-    // im2col(input,channels,height,width,kernel_size,pad,stride,B);
-
+    clock_t start=clock();
+    im2col(input,channels,height,width,kernel_size,pad,stride,B);
     Gemmer gm;
-
     gm.sgemm(m,n,k,A,B,C);
+    clock_t end=clock();
+    printf("cpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 
     // GManager<float> gm;
     // float *weight = get_weight(output_num,channels,kernel_size);
