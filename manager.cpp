@@ -430,7 +430,7 @@ int main()
   auto k = compile(gcd);
 
   // Allocate and initialise arrays shared between ARM and GPU
-  SharedArray<int> a(16), b(16), r(16);
+  SharedArray<int> a(256), b(256), r(256);
   srand(0);
   for (int i = 0; i < 16; i++) {
     a[i] = 100 + (rand() % 100);
