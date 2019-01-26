@@ -414,7 +414,7 @@ int main() {
 
     gm.gpu_conv(
       weight,
-      input,
+      col_data,
       output,
       height,
       width,
