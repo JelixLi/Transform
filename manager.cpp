@@ -171,6 +171,8 @@ private:
 
 	SharedArray<T> _gp_array[3];
 
+  int Max_GPU_Memory; // float(4 bytes)
+
 };
 
 
@@ -218,22 +220,33 @@ void GManager<T>::gpu_conv(
     int k = row_size;
 
 
-	SharedArray<T> &weight_buffer = _gp_array[0];
-	SharedArray<T> &input_buffer = _gp_array[1];
-	SharedArray<T> &output_buffer = _gp_array[2];
+  	SharedArray<T> &weight_buffer = _gp_array[0];
+  	SharedArray<T> &input_buffer = _gp_array[1];
+  	SharedArray<T> &output_buffer = _gp_array[2];
 
-	LoadWeightIntoGpu(weight_buffer,weight,m*k);
-	LoadInputIntoGpu(input_buffer,input,height,width,channels,kernel_size,pad,stride);
-	GemmKernel(&weight_buffer,&input_buffer,&output_buffer,m,n,k);
-	getOutputFromGpu(output_buffer,output,m*n*16);
+    int group = std::max(m*k,k*n,m*n) / Max_GPU_Memory + 1;
+    int weight_offset,weight_group_size;
+    int output_offset,output_group_size;
+
+    for(int i=0;i<group;i++) {
+      weight_offset = i*m*k/group;
+      weight_group_size = std::min(m*k/group,m*k-weight_offset);
+      output_offset = i*m*n/group;
+      output_group_size = std::min(m*n/group,m*n-output_offset)*16;
+
+      LoadWeightIntoGpu(weight_buffer,weight+weight_offset,weight_group_size);
+      LoadInputIntoGpu(input_buffer,input,height,width,channels,kernel_size,pad,stride);
+      GemmKernel(&weight_buffer,&input_buffer,&output_buffer,m/group,n,k);
+      getOutputFromGpu(output_buffer,output+output_offset,output_group_size);
+    }
 }
 
 
 template<typename T>
-void GManager<T>::Init_Gpu_Memory() {
-	_gp_array[0].alloc(733409/3);
-	_gp_array[1].alloc(733409/3);
-	_gp_array[2].alloc(733409/3+2);
+void GManager<T>::Init_Gpu_Memory():Max_GPU_Memory(733409) {
+	_gp_array[0].alloc(Max_GPU_Memory/3);
+	_gp_array[1].alloc(Max_GPU_Memory/3);
+	_gp_array[2].alloc(Max_GPU_Memory/3);
 }
 
 
@@ -357,41 +370,38 @@ float *get_input(int height,int width,int channels) {
 
 int main() {
 
- //    int output_num = 2;
+    int output_num = 2;
 
- //    int channels = 2;
- //    int height = 4;
- //    int width = 4;
- //    int pad = 2;
- //    int stride = 2;
- //    int kernel_size = 3;
+    int channels = 2;
+    int height = 4;
+    int width = 4;
+    int pad = 2;
+    int stride = 2;
+    int kernel_size = 3;
 
- //    int output_h = (height + 2 * pad - kernel_size) / stride + 1;
- //    int output_w = (width + 2 * pad - kernel_size) / stride + 1;
+    int output_h = (height + 2 * pad - kernel_size) / stride + 1;
+    int output_w = (width + 2 * pad - kernel_size) / stride + 1;
 
-	// auto GemmKernel = compile(gpu_gemm);
-	// GemmKernel.setNumQPUs(1);
+    auto GemmKernel = compile(gpu_gemm);
+    GemmKernel.setNumQPUs(1);
 
-	// GManager<float> gm;
-	// float *weight = get_weight(output_num,channels,kernel_size);
-	// float *input = get_input(height,width,channels);
-	// float *output = new float[output_h*output_w];
+    GManager<float> gm;
+    float *weight = get_weight(output_num,channels,kernel_size);
+    float *input = get_input(height,width,channels);
+    float *output = new float[output_h*output_w];
 
-	// float *gpu_format_weight = gm.TransWeight2GpuFormat(weight,channels,kernel_size,output_num);
+    float *gpu_format_weight = gm.TransWeight2GpuFormat(weight,channels,kernel_size,output_num);
 
-	// gm.gpu_conv(
-	// 	gpu_format_weight,
-	// 	input,output,height,
-	// 	width,channels,
-	// 	kernel_size,
-	// 	output_num,
-	// 	pad,
-	// 	stride,
-	// 	GemmKernel); 
+    gm.gpu_conv(
+      gpu_format_weight,
+      input,output,height,
+      width,channels,
+      kernel_size,
+      output_num,
+      pad,
+      stride,
+      GemmKernel); 
 
-	// SharedArray<float> A;
-	// A.alloc((1<<19)+(1<<17)+(1<<16)+(1<<13)+(1<<12)+(1<<9)+(1<<8)+(1<<5)+(1<<4)+(1<<3)+1);   //734009
 
-  GManager<float> gm;
 
 }
