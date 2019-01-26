@@ -236,12 +236,12 @@ void GManager<T>::gpu_conv(
         //   input_group_size,
         //   k);
 
-        GetOutputFromGpu(
-          output_buffer,
-          output+i*weight_group_size*output_w+j*input_group_size,
-          output_w,
-          weight_group_size,
-          input_group_size);
+        // GetOutputFromGpu(
+        //   output_buffer,
+        //   output+i*weight_group_size*output_w+j*input_group_size,
+        //   output_w,
+        //   weight_group_size,
+        //   input_group_size);
 
     }
   }
@@ -343,7 +343,7 @@ void GManager<T>::Init_Gpu_Memory() {
 
 
 template<typename T>
-GManager<T>::GManager():Max_GPU_Memory(733409-100) {
+GManager<T>::GManager():Max_GPU_Memory(733409) {
 	Init_Gpu_Memory();
 }
 
@@ -373,45 +373,6 @@ float *get_input(int height,int width,int channels) {
 		}
 	}
 	return input;
-}
-
-inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
-    return static_cast<unsigned>(a) < static_cast<unsigned>(b);
-}
-
-
-
-void im2col(const float *data_im, const int channels, const int height,
-            const int width, const int kernel_size,
-            const int pad, const int stride, float *data_col) {
-    const int output_h = (height + 2 * pad - kernel_size) / stride + 1;
-    const int output_w = (width + 2 * pad - kernel_size) / stride + 1;
-    const int channel_size = height * width;
-    for (int channel = channels; channel--; data_im += channel_size) {
-        for (int kernel_row = 0; kernel_row < kernel_size; kernel_row++) {
-            for (int kernel_col = 0; kernel_col < kernel_size; kernel_col++) {
-                int input_row = -pad + kernel_row;
-                for (int output_rows = output_h; output_rows; output_rows--) {
-                    if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
-                        for (int output_cols = output_w; output_cols; output_cols--) {
-                            *(data_col++) = 0;
-                        }
-                    } else {
-                        int input_col = -pad + kernel_col;
-                        for (int output_col = output_w; output_col; output_col--) {
-                            if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
-                                *(data_col++) = data_im[input_row * width + input_col];
-                            } else {
-                                *(data_col++) = 0;
-                            }
-                            input_col += stride;
-                        }
-                    }
-                    input_row += stride;
-                }
-            }
-        }
-    }
 }
 
 
