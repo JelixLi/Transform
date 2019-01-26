@@ -16,8 +16,7 @@ void gcd(Ptr<Int> p, Ptr<Int> q, Ptr<Int> r)
   *r = a;
 }
 
-int main()
-{
+void Init() {
   // Construct kernel
   auto k = compile(gcd);
 
@@ -33,6 +32,10 @@ int main()
   k(&a, &b, &r);
   for (int i = 0; i < 16; i++)
     printf("gcd(%i, %i) = %i\n", a[i], b[i], r[i]);
-  
+}
+
+int main()
+{  
+	Init();
   return 0;
 }
