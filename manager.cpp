@@ -21,10 +21,6 @@
 using namespace std;
 
 
-#ifndef MDL_GEMM_H
-#define MDL_GEMM_H
-#include "commons/commons.h"
-
 constexpr const int MC = 384;
 
 constexpr const int KC = 384;
