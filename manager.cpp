@@ -987,9 +987,9 @@ int main() {
     int k = channels*kernel_size*kernel_size; 
     int n = output_w*output_h; 
 
-    float *A = weight;
+    float *A = new float[m*k];
     float *B = new float[k*n];
-    float *C = output;
+    float *C = new float[m*n];
 
     clock_t start=clock();
     im2col(input,channels,height,width,kernel_size,pad,stride,B);
