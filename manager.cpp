@@ -224,7 +224,7 @@ void GManager<T>::gpu_conv(
   	SharedArray<T> &input_buffer = _gp_array[1];
   	SharedArray<T> &output_buffer = _gp_array[2];
 
-    int group = std::max(m*k,k*n,m*n) / Max_GPU_Memory + 1;
+    int group = std::max(m*k,std::max(k*n,m*n)) / Max_GPU_Memory + 1;
     int weight_offset,weight_group_size;
     int output_offset,output_group_size;
 
