@@ -13,7 +13,6 @@
 
 #define GPU
 
-#define MDL_V7
 
 #ifdef GPU
 #include "QPULib.h"
