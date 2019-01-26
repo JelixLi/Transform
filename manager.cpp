@@ -9,6 +9,7 @@
 #include <sstream>
 #include <algorithm>
 #include <math.h>
+#include <arm_neon.h>
 
 #define GPU
 
@@ -21,11 +22,21 @@
 using namespace std;
 
 
+bool equal(float a, float b) {
+    const float EPSILON = 1e-5;
+    if (fabsf(a - b) < EPSILON) {
+        return true;
+    }
+    return false;
+
+}
+
+
 constexpr const int MC = 384;
 
 constexpr const int KC = 384;
 
-constexpr const int NC = 4096;
+constexpr const int NNC = 4096;
 
 constexpr const int MR = 4;
 
@@ -35,29 +46,29 @@ struct Gemmer {
 
     float A_[MC * KC] __attribute__ ((aligned (32)));
 
-    float B_[KC * NC] __attribute__ ((aligned (32)));
+    float B_[KC * NNC] __attribute__ ((aligned (32)));
 
     float C_[MR * NR] __attribute__ ((aligned (32)));
 
     float AB_[MR * NR] __attribute__ ((aligned (32)));
 
-    void pack_MRxk(int k, const float *A, int incRowA, int incColA, float *buffer);
+    void pack_MRxk(int k, const float *A, int iNNCRowA, int iNNCColA, float *buffer);
 
-    void pack_A(int mc, int kc, const float *A, int incRowA, int incColA, float *buffer);
+    void pack_A(int mc, int kc, const float *A, int iNNCRowA, int iNNCColA, float *buffer);
 
-    void pack_kxNR(int k, const float *B, int incRowB, int incColB, float *buffer);
+    void pack_kxNR(int k, const float *B, int iNNCRowB, int iNNCColB, float *buffer);
 
-    void pack_B(int kc, int nc, const float *B, int incRowB, int incColB, float *buffer);
+    void pack_B(int kc, int NNC, const float *B, int iNNCRowB, int iNNCColB, float *buffer);
 
-    void dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC, int incColC);
+    void dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int iNNCRowC, int iNNCColC);
 
-    void dgeaxpy(int m, int n, float alpha, const float *X, int incRowX, int incColX, float *Y, int incRowY, int incColY);
+    void dgeaxpy(int m, int n, float alpha, const float *X, int iNNCRowX, int iNNCColX, float *Y, int iNNCRowY, int iNNCColY);
 
-    void dgescal(int m, int n, float alpha, float *X, int incRowX, int incColX);
+    void dgescal(int m, int n, float alpha, float *X, int iNNCRowX, int iNNCColX);
 
-    void dgemm_macro_kernel(int mc, int nc, int kc, float alpha, float beta, float *C, int incRowC, int incColC);
+    void dgemm_macro_kernel(int mc, int NNC, int kc, float alpha, float beta, float *C, int iNNCRowC, int iNNCColC);
 
-    void dgemm_nn(int m, int n, int k, float alpha, const float *A, int incRowA, int incColA, const float *B, int incRowB, int incColB, float beta, float *C, int incRowC, int incColC);
+    void dgemm_nn(int m, int n, int k, float alpha, const float *A, int iNNCRowA, int iNNCColA, const float *B, int iNNCRowB, int iNNCColB, float beta, float *C, int iNNCRowC, int iNNCColC);
 
     void sgemm(int m, int n, int k, const float *A, const float *B, float *C);
 
@@ -65,11 +76,11 @@ struct Gemmer {
 };
 
 
-void Gemmer::pack_MRxk(int k, const float *A, int incRowA, int incColA, float *buffer) {
-    int j, a2 = incRowA, a3 = 2 * incRowA, a4 = 3 * incRowA;
+void Gemmer::pack_MRxk(int k, const float *A, int iNNCRowA, int iNNCColA, float *buffer) {
+    int j, a2 = iNNCRowA, a3 = 2 * iNNCRowA, a4 = 3 * iNNCRowA;
     for (j = 0; j < k; ++j) {
         // for (int i = 0; i < MR; ++i) {
-        //     buffer[i] = A[i * incRowA];
+        //     buffer[i] = A[i * iNNCRowA];
         // }
         buffer[0] = A[0];
         buffer[1] = A[a2];
@@ -80,24 +91,24 @@ void Gemmer::pack_MRxk(int k, const float *A, int incRowA, int incColA, float *b
     }
 }
 
-void Gemmer::pack_A(int mc, int kc, const float *A, int incRowA, int incColA, float *buffer) {
+void Gemmer::pack_A(int mc, int kc, const float *A, int iNNCRowA, int iNNCColA, float *buffer) {
     int mp = mc / MR;
     int _mr = mc % MR;
     int tmp1 = kc * MR;
-    int tmp2 = MR * incRowA;
+    int tmp2 = MR * iNNCRowA;
     int i, j;
 
     for (i = 0; i < mp; ++i) {
-        pack_MRxk(kc, A, incRowA, incColA, buffer);
+        pack_MRxk(kc, A, iNNCRowA, iNNCColA, buffer);
         buffer += tmp1;
         A += tmp2;
         // buffer += kc * MR;
-        // A += MR * incRowA;
+        // A += MR * iNNCRowA;
     }
     if (_mr > 0) {
         for (j = 0; j < kc; ++j) {
             for (i = 0; i < _mr; ++i) {
-                buffer[i] = A[i * incRowA];
+                buffer[i] = A[i * iNNCRowA];
             }
             for (i = _mr; i < MR; ++i) {
                 buffer[i] = 0.0;
@@ -108,7 +119,7 @@ void Gemmer::pack_A(int mc, int kc, const float *A, int incRowA, int incColA, fl
     }
 }
 
-void Gemmer::pack_kxNR(int k, const float *B, int incRowB, int incColB, float *buffer) {
+void Gemmer::pack_kxNR(int k, const float *B, int iNNCRowB, int iNNCColB, float *buffer) {
     int i, j;
     for (i = 0; i < k; ++i) {
         for (j = 0; j < NR; ++j) {
@@ -116,19 +127,19 @@ void Gemmer::pack_kxNR(int k, const float *B, int incRowB, int incColB, float *b
         }
         // float32x4_t bv = vld1q_f32(B);
         // vst1q_f32(buffer, bv);
-        B += incRowB;
+        B += iNNCRowB;
         buffer += NR;
     }
 }
 
-void Gemmer::pack_B(int kc, int nc, const float *B, int incRowB, int incColB, float *buffer) {
-    int np = nc / NR;
-    int _nr = nc % NR;
+void Gemmer::pack_B(int kc, int NNC, const float *B, int iNNCRowB, int iNNCColB, float *buffer) {
+    int np = NNC / NR;
+    int _nr = NNC % NR;
     int tmp1 = kc * NR;
     int i, j;
 
     for (j = 0; j < np; ++j) {
-        pack_kxNR(kc, B, incRowB, incColB, buffer);
+        pack_kxNR(kc, B, iNNCRowB, iNNCColB, buffer);
         B += NR;
         buffer += tmp1;
     }
@@ -141,14 +152,14 @@ void Gemmer::pack_B(int kc, int nc, const float *B, int incRowB, int incColB, fl
                 buffer[j] = 0.0;
             }
             buffer += NR;
-            B += incRowB;
+            B += iNNCRowB;
         }
     }
 }
 
 #if defined(MDL_V7_iOS)
-void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC,
-                                int incColC) {
+void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int iNNCRowC,
+                                int iNNCColC) {
     int i, j, l;
     float32x4_t abv0 = vdupq_n_f32(0);
     float32x4_t abv1 = vdupq_n_f32(0);
@@ -182,13 +193,13 @@ void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float
     if (equal(beta, 0.0)) {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] = 0.0;
+                C[i * iNNCRowC + j * iNNCColC] = 0.0;
             }
         }
     } else if (!equal(beta, 1.0)) {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] *= beta;
+                C[i * iNNCRowC + j * iNNCColC] *= beta;
             }
         }
     }
@@ -196,20 +207,20 @@ void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float
     if (!equal(alpha, 1.0)) {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] += alpha * AB_[i + j * MR];
+                C[i * iNNCRowC + j * iNNCColC] += alpha * AB_[i + j * MR];
             }
         }
     } else {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] += AB_[i + j * MR];
+                C[i * iNNCRowC + j * iNNCColC] += AB_[i + j * MR];
             }
         }
     }
 }
 #elif defined(MDL_V7)
-void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC,
-                           int incColC) {
+void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int iNNCRowC,
+                           int iNNCColC) {
 
     int kc1 = kc / 2, kc2 = kc % 2;
 
@@ -264,13 +275,13 @@ void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float
     if (equal(beta, 0.0)) {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] = 0.0;
+                C[i * iNNCRowC + j * iNNCColC] = 0.0;
             }
         }
     } else if (!equal(beta, 1.0)) {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] *= beta;
+                C[i * iNNCRowC + j * iNNCColC] *= beta;
             }
         }
     }
@@ -278,19 +289,19 @@ void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float
     if (!equal(alpha, 1.0)) {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] += alpha * AB_[i + j * MR];
+                C[i * iNNCRowC + j * iNNCColC] += alpha * AB_[i + j * MR];
             }
         }
     } else {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] += AB_[i + j * MR];
+                C[i * iNNCRowC + j * iNNCColC] += AB_[i + j * MR];
             }
         }
     }
 }
 #elif defined(MDL_V8)
-void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC, int incColC) {
+void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int iNNCRowC, int iNNCColC) {
         int i, j, l;
 
         float32x4_t abv0 = vdupq_n_f32(0);
@@ -371,28 +382,28 @@ void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float
         if (beta == 0.0) {
             for (j = 0; j < NR; ++j) {
                 for (i = 0; i < MR; ++i) {
-                    C[i * incRowC + j * incColC] = 0.0;
+                    C[i * iNNCRowC + j * iNNCColC] = 0.0;
                 }
             }
         } else if (beta != 1.0) {
             for (j = 0; j < NR; ++j) {
                 for (i = 0; i < MR; ++i) {
-                    C[i * incRowC + j * incColC] *= beta;
+                    C[i * iNNCRowC + j * iNNCColC] *= beta;
                 }
             }
         }
 
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] += AB_[i + j * MR];
+                C[i * iNNCRowC + j * iNNCColC] += AB_[i + j * MR];
             }
         }
     }
 
 
 #else
-void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC,
-                           int incColC) {
+void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int iNNCRowC,
+                           int iNNCColC) {
     int i = 0;
     int j = 0;
     int l = 0;
@@ -412,13 +423,13 @@ void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float
     if (equal(beta, 0.0)) {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] = 0.0;
+                C[i * iNNCRowC + j * iNNCColC] = 0.0;
             }
         }
     } else if (!equal(beta, 1.0)) {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] *= beta;
+                C[i * iNNCRowC + j * iNNCColC] *= beta;
             }
         }
     }
@@ -426,13 +437,13 @@ void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float
     if (!equal(alpha, 1.0)) {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] += alpha * AB_[i + j * MR];
+                C[i * iNNCRowC + j * iNNCColC] += alpha * AB_[i + j * MR];
             }
         }
     } else {
         for (j = 0; j < NR; ++j) {
             for (i = 0; i < MR; ++i) {
-                C[i * incRowC + j * incColC] += AB_[i + j * MR];
+                C[i * iNNCRowC + j * iNNCColC] += AB_[i + j * MR];
             }
         }
     }
@@ -440,47 +451,47 @@ void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float
 #endif
 
 
-void Gemmer::dgeaxpy(int m, int n, float alpha, const float *X, int incRowX, int incColX, float *Y, int incRowY,
-                     int incColY) {
+void Gemmer::dgeaxpy(int m, int n, float alpha, const float *X, int iNNCRowX, int iNNCColX, float *Y, int iNNCRowY,
+                     int iNNCColY) {
     int i, j;
     if (!equal(alpha, 1.0)) {
         for (j = 0; j < n; ++j) {
             for (i = 0; i < m; ++i) {
-                Y[i * incRowY + j] += alpha * X[i + j * incColX];
+                Y[i * iNNCRowY + j] += alpha * X[i + j * iNNCColX];
             }
         }
     } else {
         for (j = 0; j < n; ++j) {
             for (i = 0; i < m; ++i) {
-                Y[i * incRowY + j] += X[i + j * incColX];
+                Y[i * iNNCRowY + j] += X[i + j * iNNCColX];
             }
         }
     }
 }
 
-void Gemmer::dgescal(int m, int n, float alpha, float *X, int incRowX, int incColX) {
+void Gemmer::dgescal(int m, int n, float alpha, float *X, int iNNCRowX, int iNNCColX) {
     int i, j;
     if (!equal(alpha, 0.0)) {
         for (i = 0; i < m; ++i) {
             for (j = 0; j < n; ++j) {
-                X[i * incRowX + j] *= alpha;
+                X[i * iNNCRowX + j] *= alpha;
             }
         }
     } else {
         for (i = 0; i < m; ++i) {
             for (j = 0; j < n; ++j) {
-                X[i * incRowX + j] = 0.0;
+                X[i * iNNCRowX + j] = 0.0;
             }
         }
     }
 }
 
-void Gemmer::dgemm_macro_kernel(int mc, int nc, int kc, float alpha, float beta, float *C, int incRowC, int incColC) {
+void Gemmer::dgemm_macro_kernel(int mc, int NNC, int kc, float alpha, float beta, float *C, int iNNCRowC, int iNNCColC) {
     int mp = (mc + MR - 1) / MR;
-    int np = (nc + NR - 1) / NR;
+    int np = (NNC + NR - 1) / NR;
 
     int _mr = mc % MR;
-    int _nr = nc % NR;
+    int _nr = NNC % NR;
 
     int i, j;
 
@@ -491,50 +502,50 @@ void Gemmer::dgemm_macro_kernel(int mc, int nc, int kc, float alpha, float beta,
             int mr = (i != mp - 1 || _mr == 0) ? MR : _mr;
 
             if (mr == MR && nr == NR) {
-                dgemm_micro_kernel(kc, alpha, &A_[i * kc * MR], &B_[j * kc * NR], beta, &C[i * MR * incRowC + j * NR], incRowC, incColC);
+                dgemm_micro_kernel(kc, alpha, &A_[i * kc * MR], &B_[j * kc * NR], beta, &C[i * MR * iNNCRowC + j * NR], iNNCRowC, iNNCColC);
             } else {
                 dgemm_micro_kernel(kc, alpha, &A_[i * kc * MR], &B_[j * kc * NR], 0.0, C_, 1, MR);
-                dgescal(mr, nr, beta, &C[i * MR * incRowC + j * NR], incRowC, incColC);
-                dgeaxpy(mr, nr, 1.0, C_, 1, MR, &C[i * MR * incRowC + j * NR], incRowC, incColC);
+                dgescal(mr, nr, beta, &C[i * MR * iNNCRowC + j * NR], iNNCRowC, iNNCColC);
+                dgeaxpy(mr, nr, 1.0, C_, 1, MR, &C[i * MR * iNNCRowC + j * NR], iNNCRowC, iNNCColC);
             }
         }
     }
 }
 
-void Gemmer::dgemm_nn(int m, int n, int k, float alpha, const float *A, int incRowA, int incColA, const float *B, int incRowB, int incColB, float beta, float *C, int incRowC, int incColC) {
+void Gemmer::dgemm_nn(int m, int n, int k, float alpha, const float *A, int iNNCRowA, int iNNCColA, const float *B, int iNNCRowB, int iNNCColB, float beta, float *C, int iNNCRowC, int iNNCColC) {
     int mb = (m + MC - 1) / MC;
-    int nb = (n + NC - 1) / NC;
+    int nb = (n + NNC - 1) / NNC;
     int kb = (k + KC - 1) / KC;
 
     int _mc = m % MC;
-    int _nc = n % NC;
+    int _NNC = n % NNC;
     int _kc = k % KC;
 
-    int mc, nc, kc;
+    int mc, NNC, kc;
     int i, j, l;
 
     float _beta;
 
     if (equal(alpha, 0.0) ||  k == 0) {
-        dgescal(m, n, beta, C, incRowC, incColC);
+        dgescal(m, n, beta, C, iNNCRowC, iNNCColC);
         return;
     }
 
     for (j = 0; j < nb; ++j) {
-        nc = (j != nb - 1 || _nc == 0) ? NC : _nc;
+        NNC = (j != nb - 1 || _NNC == 0) ? NNC : _NNC;
 
         for (l = 0; l < kb; ++l) {
             kc = (l != kb - 1 || _kc == 0) ? KC : _kc;
             _beta = (l == 0) ? beta : 1.0;
 
-            pack_B(kc, nc, &B[l * KC * incRowB + j * NC], incRowB, incColB, B_);
+            pack_B(kc, NNC, &B[l * KC * iNNCRowB + j * NNC], iNNCRowB, iNNCColB, B_);
 
             for (i = 0; i < mb; ++i) {
                 mc = (i != mb - 1 || _mc == 0) ? MC : _mc;
 
-                pack_A(mc, kc, &A[i * MC * incRowA + l * KC], incRowA, incColA, A_);
+                pack_A(mc, kc, &A[i * MC * iNNCRowA + l * KC], iNNCRowA, iNNCColA, A_);
 
-                dgemm_macro_kernel(mc, nc, kc, alpha, _beta, &C[i * MC * incRowC + j * NC], incRowC, incColC);
+                dgemm_macro_kernel(mc, NNC, kc, alpha, _beta, &C[i * MC * iNNCRowC + j * NNC], iNNCRowC, iNNCColC);
             }
         }
     }
@@ -613,7 +624,7 @@ void SharedArray<T>::dealloc() {
 void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
     Int qpuNums = numQPUs();
 
-    Int inc = 16;
+    Int iNNC = 16;
     Int ind = index();
     Int inm = me()*k;
 
@@ -634,14 +645,14 @@ void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
            gather(p);
            gather(q);
            sum = 0;
-           For(Int s=0,s<k,s=s+inc)
-              gather(p+inc);
-              gather(q+inc);
+           For(Int s=0,s<k,s=s+iNNC)
+              gather(p+iNNC);
+              gather(q+iNNC);
               receive(x);
               receive(y);
               sum = sum + x*y;
-              p=p+inc;
-              q=q+inc;
+              p=p+iNNC;
+              q=q+iNNC;
            End
            receive(x);
            receive(y);
