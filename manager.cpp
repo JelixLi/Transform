@@ -38,13 +38,13 @@ constexpr const int MR = 4;
 
 constexpr const int NR = 4;
 
-float A_[MC * KC] __attribute__ ((aligned (32)));
+float A_[MC * KC];
 
-float B_[KC * NC_] __attribute__ ((aligned (32)));
+float B_[KC * NC_];
 
-float C_[MR * NR] __attribute__ ((aligned (32)));
+float C_[MR * NR];
 
-float AB_[MR * NR] __attribute__ ((aligned (32)));
+float AB_[MR * NR];
 
 
 void pack_MRxk(int k, const float *A, int iNC_RowA, int iNC_ColA, float *buffer) {
@@ -280,9 +280,6 @@ void sgemm(int m, int n, int k, const float *A, const float *B, float *C) {
 dgemm_nn(m, n, k, 1, A, k, 1, B, n, 1, 0, C, n, 1);
 }
 
-void sgemm(int m, int n, int k, const float *A, const float *B, float *C, float alpha, float beta) {
-dgemm_nn(m, n, k, alpha, A, k, 1, B, n, 1, beta, C, n, 1);
-}
 
 #ifndef GPU
 
@@ -695,19 +692,19 @@ int main() {
     int height = 227;
     int width = 227;
     int pad = 0;
-    int stride = 2;
-    int kernel_size = 3;
+    int stride = 1;
+    int kernel_size = 7;
 
-    int output_h = (height + 2 * pad - kernel_size) / stride + 1;
-    int output_w = (width + 2 * pad - kernel_size) / stride + 1;
+    int output_h = (height + 2 * pad - kernel_size) / stride + 1; 
+    int output_w = (width + 2 * pad - kernel_size) / stride + 1; 
 
     float *weight = get_weight(output_num,channels,kernel_size);
     float *input = get_input(height,width,channels);
     float *output = new float[output_h*output_w];
 
-    int m = output_num;
-    int k = channels*kernel_size*kernel_size;
-    int n = output_w*output_h;
+    int m = output_num; 
+    int k = channels*kernel_size*kernel_size; 
+    int n = output_w*output_h; 
 
     float *A = new float[m*k];
     float *B = new float[k*n];
