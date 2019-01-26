@@ -244,9 +244,9 @@ void GManager<T>::gpu_conv(
 
 template<typename T>
 void GManager<T>::Init_Gpu_Memory() {
-	_gp_array[0].alloc(Max_GPU_Memory/3-100);
-	_gp_array[1].alloc(Max_GPU_Memory/3-100);
-	_gp_array[2].alloc(Max_GPU_Memory/3-100);
+	_gp_array[0].alloc(Max_GPU_Memory/3);
+	_gp_array[1].alloc(Max_GPU_Memory/3);
+	_gp_array[2].alloc(Max_GPU_Memory/3);
 }
 
 
@@ -384,7 +384,7 @@ int main() {
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
 
     auto GemmKernel = compile(gpu_gemm);
-    GemmKernel.setNumQPUs(1);
+    GemmKernel.setNumQPUs(2);
 
     GManager<float> gm;
     float *weight = get_weight(output_num,channels,kernel_size);
