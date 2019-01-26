@@ -977,25 +977,22 @@ int main() {
     int output_h = (height + 2 * pad - kernel_size) / stride + 1; 
     int output_w = (width + 2 * pad - kernel_size) / stride + 1; 
 
-    float *weight = get_weight(output_num,channels,kernel_size);
-    float *input = get_input(height,width,channels);
-    float *output = new float[output_h*output_w];
+    // float *weight = get_weight(output_num,channels,kernel_size);
+    // float *input = get_input(height,width,channels);
+    // float *output = new float[output_h*output_w];
 
-    int m = output_num; 
-    int k = channels*kernel_size*kernel_size; 
-    int n = output_w*output_h; 
+    // int m = output_num; 
+    // int k = channels*kernel_size*kernel_size; 
+    // int n = output_w*output_h; 
 
-    // int m = 64; 
-    // int k = 27; 
-    // int n = 113*113; 
+    int m = 64; 
+    int k = 27; 
+    int n = 113*113; 
 
-    // float *A = new float[m*k];
-    // float *B = new float[k*n];
-    // float *C = new float[m*n];
-
-    float *A = weight;
+    float *A = new float[m*k];
     float *B = new float[k*n];
-    float *C = output;
+    float *C = new float[m*n];
+
 
     clock_t start=clock();
     im2col(input,channels,height,width,kernel_size,pad,stride,B);
