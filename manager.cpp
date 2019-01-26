@@ -964,16 +964,16 @@ void im2col(const float *data_im, const int channels, const int height,
 
 int main() {
 
-    auto GemmKernel = compile(gpu_gemm);
-    GemmKernel.setNumQPUs(1);
+    // auto GemmKernel = compile(gpu_gemm);
+    // GemmKernel.setNumQPUs(1);
 
     int output_num = 64;
 
-    int channels = 192;
-    int height = 10;
-    int width = 10;
+    int channels = 3;
+    int height = 227;
+    int width = 227;
     int pad = 0;
-    int stride = 1;
+    int stride = 2;
     int kernel_size = 3;
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1; 
@@ -987,9 +987,17 @@ int main() {
     int k = channels*kernel_size*kernel_size; 
     int n = output_w*output_h; 
 
-    float *A = new float[m*k];
+    // int m = 64; 
+    // int k = 27; 
+    // int n = 113*113; 
+
+    // float *A = new float[m*k];
+    // float *B = new float[k*n];
+    // float *C = new float[m*n];
+
+    float *A = weight;
     float *B = new float[k*n];
-    float *C = new float[m*n];
+    float *C = output;
 
     clock_t start=clock();
     im2col(input,channels,height,width,kernel_size,pad,stride,B);
