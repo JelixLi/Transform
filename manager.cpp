@@ -251,7 +251,7 @@ void GManager<T>::gpu_conv(
 }
 
 template<typename T>
-void GetOutputFromGpu(
+void GManager<T>::GetOutputFromGpu(
     SharedArray<T> &_shared_array_buffer,
     T *output_data_buffer,
     int step_size,
