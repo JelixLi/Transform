@@ -234,7 +234,7 @@ void GManager<T>::gpu_conv(
           &output_buffer,
           weight_group_size,
           input_group_size,
-          k);
+          k/16);
 
         // GetOutputFromGpu(
         //   output_buffer,
