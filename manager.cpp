@@ -9,7 +9,6 @@
 #include <sstream>
 #include <algorithm>
 #include <math.h>
-#include <arm_neon.h>
 
 #define GPU
 
@@ -992,7 +991,7 @@ int main() {
     float *B = new float[k*n];
     float *C = new float[m*n];
 
-
+    cout<<m<<" "<<n<<" "<<k<<endl;
     // im2col(input,channels,height,width,kernel_size,pad,stride,B);
 
     Gemmer gm;
