@@ -199,54 +199,63 @@ void GManager<T>::gpu_conv(
     SharedArray<T>& input_buffer = _gp_array[1];
     SharedArray<T>& output_buffer = _gp_array[2];
 
-    int Gpu_Memory_Basic_Block = Max_GPU_Memory/k/3;
 
-    int m_group = m / Gpu_Memory_Basic_Block;
-    int _m_group = m % Gpu_Memory_Basic_Block;
+    GemmKernel(
+      &weight_buffer,
+      &input_buffer,
+      &output_buffer,
+      64,
+      5000,
+      2);
 
-    int n_group = n / Gpu_Memory_Basic_Block;
-    int _n_group = n % Gpu_Memory_Basic_Block;
+  //   int Gpu_Memory_Basic_Block = Max_GPU_Memory/k/3;
 
-    cout<<m_group<<" "<<n_group<<endl;
-    cout<<_m_group<<" "<<_n_group<<endl;
-    cout<<Gpu_Memory_Basic_Block<<endl;
+  //   int m_group = m / Gpu_Memory_Basic_Block;
+  //   int _m_group = m % Gpu_Memory_Basic_Block;
 
-    for(int i=0;i<m_group+1;i++) {
-      int weight_offset = i*k*Gpu_Memory_Basic_Block;
-      int weight_group_size = ((i==m_group||m_group==0)?_m_group:Gpu_Memory_Basic_Block);
-      for(int j=0;j<n_group+1;j++) {
-        int input_offset = j*k*Gpu_Memory_Basic_Block;
-        int input_group_size = ((j==n_group||n_group==0)?_n_group:Gpu_Memory_Basic_Block);
+  //   int n_group = n / Gpu_Memory_Basic_Block;
+  //   int _n_group = n % Gpu_Memory_Basic_Block;
 
-        LoadDataIntoGpu(
-          weight_buffer,
-          weight+weight_offset,
-          weight_group_size,
-          k);
+  //   cout<<m_group<<" "<<n_group<<endl;
+  //   cout<<_m_group<<" "<<_n_group<<endl;
+  //   cout<<Gpu_Memory_Basic_Block<<endl;
 
-        LoadDataIntoGpu(
-          input_buffer,
-          input+input_offset,
-          input_group_size,
-          k);
+  //   for(int i=0;i<m_group+1;i++) {
+  //     int weight_offset = i*k*Gpu_Memory_Basic_Block;
+  //     int weight_group_size = ((i==m_group||m_group==0)?_m_group:Gpu_Memory_Basic_Block);
+  //     for(int j=0;j<n_group+1;j++) {
+  //       int input_offset = j*k*Gpu_Memory_Basic_Block;
+  //       int input_group_size = ((j==n_group||n_group==0)?_n_group:Gpu_Memory_Basic_Block);
 
-        GemmKernel(
-          &weight_buffer,
-          &input_buffer,
-          &output_buffer,
-          weight_group_size,
-          input_group_size,
-          k/16);
+  //       LoadDataIntoGpu(
+  //         weight_buffer,
+  //         weight+weight_offset,
+  //         weight_group_size,
+  //         k);
 
-        // GetOutputFromGpu(
-        //   output_buffer,
-        //   output+i*weight_group_size*output_w+j*input_group_size,
-        //   output_w,
-        //   weight_group_size,
-        //   input_group_size);
+  //       LoadDataIntoGpu(
+  //         input_buffer,
+  //         input+input_offset,
+  //         input_group_size,
+  //         k);
 
-    }
-  }
+  //       GemmKernel(
+  //         &weight_buffer,
+  //         &input_buffer,
+  //         &output_buffer,
+  //         weight_group_size,
+  //         input_group_size,
+  //         k/16);
+
+  //       // GetOutputFromGpu(
+  //       //   output_buffer,
+  //       //   output+i*weight_group_size*output_w+j*input_group_size,
+  //       //   output_w,
+  //       //   weight_group_size,
+  //       //   input_group_size);
+
+  //   }
+  // }
 }
 
 template<typename T>
