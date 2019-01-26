@@ -18,6 +18,272 @@
 
 using namespace std;
 
+
+bool equal(float a, float b) {
+    const float EPSILON = 1e-5;
+    if (fabsf(a - b) < EPSILON) {
+        return true;
+    }
+    return false;
+
+}
+
+constexpr const int MC = 384;
+
+constexpr const int KC = 384;
+
+constexpr const int NC_ = 4096;
+
+constexpr const int MR = 4;
+
+constexpr const int NR = 4;
+
+float A_[MC * KC] __attribute__ ((aligned (32)));
+
+float B_[KC * NC_] __attribute__ ((aligned (32)));
+
+float C_[MR * NR] __attribute__ ((aligned (32)));
+
+float AB_[MR * NR] __attribute__ ((aligned (32)));
+
+
+void pack_MRxk(int k, const float *A, int iNC_RowA, int iNC_ColA, float *buffer) {
+int j, a2 = iNC_RowA, a3 = 2 * iNC_RowA, a4 = 3 * iNC_RowA;
+for (j = 0; j < k; ++j) {
+    // for (int i = 0; i < MR; ++i) {
+    //     buffer[i] = A[i * iNC_RowA];
+    // }
+    buffer[0] = A[0];
+    buffer[1] = A[a2];
+    buffer[2] = A[a3];
+    buffer[3] = A[a4];
+    A += 1;
+    buffer += MR;
+}
+}
+
+void pack_A(int mc, int kc, const float *A, int iNC_RowA, int iNC_ColA, float *buffer) {
+int mp = mc / MR;
+int _mr = mc % MR;
+int tmp1 = kc * MR;
+int tmp2 = MR * iNC_RowA;
+int i, j;
+
+for (i = 0; i < mp; ++i) {
+    pack_MRxk(kc, A, iNC_RowA, iNC_ColA, buffer);
+    buffer += tmp1;
+    A += tmp2;
+    // buffer += kc * MR;
+    // A += MR * iNC_RowA;
+}
+if (_mr > 0) {
+    for (j = 0; j < kc; ++j) {
+        for (i = 0; i < _mr; ++i) {
+            buffer[i] = A[i * iNC_RowA];
+        }
+        for (i = _mr; i < MR; ++i) {
+            buffer[i] = 0.0;
+        }
+        A += 1;
+        buffer += MR;
+    }
+}
+}
+
+void pack_kxNR(int k, const float *B, int iNC_RowB, int iNC_ColB, float *buffer) {
+int i, j;
+for (i = 0; i < k; ++i) {
+    for (j = 0; j < NR; ++j) {
+        buffer[j] = B[j];
+    }
+    // float32x4_t bv = vld1q_f32(B);
+    // vst1q_f32(buffer, bv);
+    B += iNC_RowB;
+    buffer += NR;
+}
+}
+
+void pack_B(int kc, int NC_, const float *B, int iNC_RowB, int iNC_ColB, float *buffer) {
+int np = NC_ / NR;
+int _nr = NC_ % NR;
+int tmp1 = kc * NR;
+int i, j;
+
+for (j = 0; j < np; ++j) {
+    pack_kxNR(kc, B, iNC_RowB, iNC_ColB, buffer);
+    B += NR;
+    buffer += tmp1;
+}
+if (_nr > 0) {
+    for (i = 0; i < kc; ++i) {
+        for (j = 0; j < _nr; ++j) {
+            buffer[j] = B[j];
+        }
+        for (j = _nr; j < NR; ++j) {
+            buffer[j] = 0.0;
+        }
+        buffer += NR;
+        B += iNC_RowB;
+    }
+}
+}
+
+void dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int iNC_RowC,
+                       int iNC_ColC) {
+int i = 0;
+int j = 0;
+int l = 0;
+for (l = 0; l < MR * NR; ++l) {
+    AB_[l] = 0;
+}
+for (l = 0; l < kc; ++l) {
+    for (j = 0; j < NR; ++j) {
+        for (i = 0; i < MR; ++i) {
+            AB_[i + j * MR] += A[i] * B[j];
+        }
+    }
+    A += MR;
+    B += NR;
+}
+
+if (equal(beta, 0.0)) {
+    for (j = 0; j < NR; ++j) {
+        for (i = 0; i < MR; ++i) {
+            C[i * iNC_RowC + j * iNC_ColC] = 0.0;
+        }
+    }
+} else if (!equal(beta, 1.0)) {
+    for (j = 0; j < NR; ++j) {
+        for (i = 0; i < MR; ++i) {
+            C[i * iNC_RowC + j * iNC_ColC] *= beta;
+        }
+    }
+}
+
+if (!equal(alpha, 1.0)) {
+    for (j = 0; j < NR; ++j) {
+        for (i = 0; i < MR; ++i) {
+            C[i * iNC_RowC + j * iNC_ColC] += alpha * AB_[i + j * MR];
+        }
+    }
+} else {
+    for (j = 0; j < NR; ++j) {
+        for (i = 0; i < MR; ++i) {
+            C[i * iNC_RowC + j * iNC_ColC] += AB_[i + j * MR];
+        }
+    }
+}
+}
+
+
+void dgeaxpy(int m, int n, float alpha, const float *X, int iNC_RowX, int iNC_ColX, float *Y, int iNC_RowY,
+                 int iNC_ColY) {
+int i, j;
+if (!equal(alpha, 1.0)) {
+    for (j = 0; j < n; ++j) {
+        for (i = 0; i < m; ++i) {
+            Y[i * iNC_RowY + j] += alpha * X[i + j * iNC_ColX];
+        }
+    }
+} else {
+    for (j = 0; j < n; ++j) {
+        for (i = 0; i < m; ++i) {
+            Y[i * iNC_RowY + j] += X[i + j * iNC_ColX];
+        }
+    }
+}
+}
+
+void dgescal(int m, int n, float alpha, float *X, int iNC_RowX, int iNC_ColX) {
+int i, j;
+if (!equal(alpha, 0.0)) {
+    for (i = 0; i < m; ++i) {
+        for (j = 0; j < n; ++j) {
+            X[i * iNC_RowX + j] *= alpha;
+        }
+    }
+} else {
+    for (i = 0; i < m; ++i) {
+        for (j = 0; j < n; ++j) {
+            X[i * iNC_RowX + j] = 0.0;
+        }
+    }
+}
+}
+
+void dgemm_macro_kernel(int mc, int NC_, int kc, float alpha, float beta, float *C, int iNC_RowC, int iNC_ColC) {
+int mp = (mc + MR - 1) / MR;
+int np = (NC_ + NR - 1) / NR;
+
+int _mr = mc % MR;
+int _nr = NC_ % NR;
+
+int i, j;
+
+for (j = 0; j < np; ++j) {
+    int nr = (j != np - 1 || _nr == 0) ? NR : _nr;
+
+    for (i = 0; i < mp; ++i) {
+        int mr = (i != mp - 1 || _mr == 0) ? MR : _mr;
+
+        if (mr == MR && nr == NR) {
+            dgemm_micro_kernel(kc, alpha, &A_[i * kc * MR], &B_[j * kc * NR], beta, &C[i * MR * iNC_RowC + j * NR], iNC_RowC, iNC_ColC);
+        } else {
+            dgemm_micro_kernel(kc, alpha, &A_[i * kc * MR], &B_[j * kc * NR], 0.0, C_, 1, MR);
+            dgescal(mr, nr, beta, &C[i * MR * iNC_RowC + j * NR], iNC_RowC, iNC_ColC);
+            dgeaxpy(mr, nr, 1.0, C_, 1, MR, &C[i * MR * iNC_RowC + j * NR], iNC_RowC, iNC_ColC);
+        }
+    }
+}
+}
+
+void dgemm_nn(int m, int n, int k, float alpha, const float *A, int iNC_RowA, int iNC_ColA, const float *B, int iNC_RowB, int iNC_ColB, float beta, float *C, int iNC_RowC, int iNC_ColC) {
+int mb = (m + MC - 1) / MC;
+int nb = (n + NC_ - 1) / NC_;
+int kb = (k + KC - 1) / KC;
+
+int _mc = m % MC;
+int _NC_ = n % NC_;
+int _kc = k % KC;
+
+int mc, NC_, kc;
+int i, j, l;
+
+float _beta;
+
+if (equal(alpha, 0.0) ||  k == 0) {
+    dgescal(m, n, beta, C, iNC_RowC, iNC_ColC);
+    return;
+}
+
+for (j = 0; j < nb; ++j) {
+    NC_ = (j != nb - 1 || _NC_ == 0) ? NC_ : _NC_;
+
+    for (l = 0; l < kb; ++l) {
+        kc = (l != kb - 1 || _kc == 0) ? KC : _kc;
+        _beta = (l == 0) ? beta : 1.0;
+
+        pack_B(kc, NC_, &B[l * KC * iNC_RowB + j * NC_], iNC_RowB, iNC_ColB, B_);
+
+        for (i = 0; i < mb; ++i) {
+            mc = (i != mb - 1 || _mc == 0) ? MC : _mc;
+
+            pack_A(mc, kc, &A[i * MC * iNC_RowA + l * KC], iNC_RowA, iNC_ColA, A_);
+
+            dgemm_macro_kernel(mc, NC_, kc, alpha, _beta, &C[i * MC * iNC_RowC + j * NC_], iNC_RowC, iNC_ColC);
+        }
+    }
+}
+}
+
+void sgemm(int m, int n, int k, const float *A, const float *B, float *C) {
+dgemm_nn(m, n, k, 1, A, k, 1, B, n, 1, 0, C, n, 1);
+}
+
+void sgemm(int m, int n, int k, const float *A, const float *B, float *C, float alpha, float beta) {
+dgemm_nn(m, n, k, alpha, A, k, 1, B, n, 1, beta, C, n, 1);
+}
+
 #ifndef GPU
 
 template<typename T>
@@ -378,6 +644,45 @@ float *get_input(int height,int width,int channels) {
 	return input;
 }
 
+inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
+    return static_cast<unsigned>(a) < static_cast<unsigned>(b);
+}
+
+
+
+void im2col(const float *data_im, const int channels, const int height,
+            const int width, const int kernel_size,
+            const int pad, const int stride, float *data_col) {
+    const int output_h = (height + 2 * pad - kernel_size) / stride + 1;
+    const int output_w = (width + 2 * pad - kernel_size) / stride + 1;
+    const int channel_size = height * width;
+    for (int channel = channels; channel--; data_im += channel_size) {
+        for (int kernel_row = 0; kernel_row < kernel_size; kernel_row++) {
+            for (int kernel_col = 0; kernel_col < kernel_size; kernel_col++) {
+                int input_row = -pad + kernel_row;
+                for (int output_rows = output_h; output_rows; output_rows--) {
+                    if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
+                        for (int output_cols = output_w; output_cols; output_cols--) {
+                            *(data_col++) = 0;
+                        }
+                    } else {
+                        int input_col = -pad + kernel_col;
+                        for (int output_col = output_w; output_col; output_col--) {
+                            if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
+                                *(data_col++) = data_im[input_row * width + input_col];
+                            } else {
+                                *(data_col++) = 0;
+                            }
+                            input_col += stride;
+                        }
+                    }
+                    input_row += stride;
+                }
+            }
+        }
+    }
+}
+
 
 int main() {
 
@@ -396,34 +701,46 @@ int main() {
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
 
-    GManager<float> gm;
     float *weight = get_weight(output_num,channels,kernel_size);
     float *input = get_input(height,width,channels);
     float *output = new float[output_h*output_w];
 
-    float *col_data = new float[kernel_size*kernel_size*channels*output_w*output_h];
-    gm.TransInput2GpuFormat(
-      col_data,
-      input,
-      height,
-      width,
-      channels,
-      kernel_size,
-      pad,
-      stride);
+    float *A = weight;
+    float *B;
+    float *C = output;
 
-    gm.gpu_conv(
-      weight,
-      col_data,
-      output,
-      height,
-      width,
-      channels,
-      kernel_size,
-      output_num,
-      pad,
-      stride,
-      GemmKernel);
+    im2col(input,channels,height,width,kernel_size,pad,stride,B);
+
+    sgemm(m,n,k,A,B,C);
+
+    // GManager<float> gm;
+    // float *weight = get_weight(output_num,channels,kernel_size);
+    // float *input = get_input(height,width,channels);
+    // float *output = new float[output_h*output_w];
+
+    // float *col_data = new float[kernel_size*kernel_size*channels*output_w*output_h];
+    // gm.TransInput2GpuFormat(
+    //   col_data,
+    //   input,
+    //   height,
+    //   width,
+    //   channels,
+    //   kernel_size,
+    //   pad,
+    //   stride);
+
+    // gm.gpu_conv(
+    //   weight,
+    //   col_data,
+    //   output,
+    //   height,
+    //   width,
+    //   channels,
+    //   kernel_size,
+    //   output_num,
+    //   pad,
+    //   stride,
+    //   GemmKernel);
 
 }
 
