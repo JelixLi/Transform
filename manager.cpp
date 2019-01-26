@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <math.h>
 
-#define GPU
 
 #ifdef GPU
 #include "QPULib.h"
@@ -112,7 +111,7 @@ void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
            receive(y);
            store(sum,C + ind + ((r*n+c)<<4));
       End 
-    End 	
+    End   
 }
 
 
@@ -122,42 +121,41 @@ class GManager {
 public:
 	GManager();
 
-	void LoadInputIntoGpu(
-		SharedArray<T> &_shared_array_buffer,
-		const T *input_data_buffer,
-		int input_height,
-		int input_width,
-		int input_channel,
-		int kernel_size,
-		int pad,
-		int stride);
+  void LoadDataIntoGpu(
+    SharedArray<T> &_shared_array_buffer,
+    T *input_data_buffer,
+    int group_size,
+    int data_size);
 
-	void LoadWeightIntoGpu(
-		SharedArray<T> &_shared_array_buffer,
-		const T *input_data_buffer,
-		int data_size);
+  void TransInput2GpuFormat(
+    T *input_data_buffer,
+    const T *input_data,
+    int input_height,
+    int input_width,
+    int input_channel,
+    int kernel_size,
+    int pad,
+    int stride);
 
-	void getOutputFromGpu(
-		SharedArray<T> &_shared_array_buffer,
-		T *output_data_buffer,
-		int data_size);
+  void GetOutputFromGpu(
+    SharedArray<T> &_shared_array_buffer,
+    T *output_data_buffer,
+    int step_size,
+    int row_size,
+    int col_size);
 
-
-	void gpu_conv(
-		T *weight,
-		T *input,
-		T *output_buffer,
-		int height,
-		int width,
-		int channels,
-		int kernel_size,
-		int output_num,
-		int pad,
-		int stride,
-		auto& GemmKernel);
-
-
-	T *TransWeight2GpuFormat(T *original_data,int channels,int kernel_size,int output_num);
+  void gpu_conv(
+    T *weight,
+    T *input,
+    T *output,
+    int height,
+    int width,
+    int channels,
+    int kernel_size,
+    int output_num,
+    int pad,
+    int stride,
+    auto& GemmKernel);
 
 private:
 	void Init_Gpu_Memory();
@@ -176,35 +174,18 @@ private:
 
 
 template<typename T>
-void GManager<T>::getOutputFromGpu(
-	SharedArray<T> &_shared_array_buffer,
-	T *output_data_buffer,
-	int data_size) {
-
-    float sum=0;
-    for(int i=0;i<data_size;i++) {
-        sum += _shared_array_buffer[i];
-        if((i+1)%16==0) {
-            *output_data_buffer++ = sum;
-            sum = 0;
-        }
-    }
-}
-
-
-template<typename T>
 void GManager<T>::gpu_conv(
-	T *weight,
-	T *input,
-	T *output,
-	int height,
-	int width,
-	int channels,
-	int kernel_size,
-	int output_num,
-	int pad,
-	int stride,
-	auto& GemmKernel) {
+  T *weight,
+  T *input,
+  T *output,
+  int height,
+  int width,
+  int channels,
+  int kernel_size,
+  int output_num,
+  int pad,
+  int stride,
+  auto& GemmKernel) {
 
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
@@ -218,29 +199,140 @@ void GManager<T>::gpu_conv(
     int n = col_size;
     int k = row_size;
 
+    SharedArray<T>& weight_buffer = _gp_array[0];
+    SharedArray<T>& input_buffer = _gp_array[1];
+    SharedArray<T>& output_buffer = _gp_array[2];
 
-  	SharedArray<T> &weight_buffer = _gp_array[0];
-  	SharedArray<T> &input_buffer = _gp_array[1];
-  	SharedArray<T> &output_buffer = _gp_array[2];
+    int Gpu_Memory_Basic_Block = Max_GPU_Memory/k/3;
 
-    int group = std::max(m*k,std::max(k*n,m*n)) / Max_GPU_Memory + 1;
-    int weight_offset,weight_group_size;
-    int output_offset,output_group_size;
-    int kernel_group_size;
+    int m_group = m / Gpu_Memory_Basic_Block;
+    int _m_group = m % Gpu_Memory_Basic_Block;
 
-    for(int i=0;i<group;i++) {
-      weight_offset = i*m*k/group;
-      weight_group_size = std::min(m*k/group,m*k-weight_offset);
-      output_offset = i*m*n/group;
-      output_group_size = std::min(m*n/group,m*n-output_offset)*16;
-      kernel_group_size = std::min(m/group,m-i*m/group);
+    int n_group = n / Gpu_Memory_Basic_Block;
+    int _n_group = n % Gpu_Memory_Basic_Block;
 
-      LoadWeightIntoGpu(weight_buffer,weight+weight_offset,weight_group_size);
-      LoadInputIntoGpu(input_buffer,input,height,width,channels,kernel_size,pad,stride);
-      GemmKernel(&weight_buffer,&input_buffer,&output_buffer,kernel_group_size,n,k);
-      getOutputFromGpu(output_buffer,output+output_offset,output_group_size);
+    for(int i=0;i<m_group+1;i++) {
+      int weight_offset = i*k*Gpu_Memory_Basic_Block;
+      int weight_group_size = ((i==m_group||m_group==0)?_m_group:Gpu_Memory_Basic_Block);
+      for(int j=0;j<n_group+1;j++) {
+        int input_offset = j*k*Gpu_Memory_Basic_Block;
+        int input_group_size = ((j==n_group||n_group==0)?_n_group:Gpu_Memory_Basic_Block);
+
+        LoadDataIntoGpu(
+          weight_buffer,
+          weight+weight_offset,
+          weight_group_size,
+          k);
+
+        LoadDataIntoGpu(
+          input_buffer,
+          input+input_offset,
+          input_group_size,
+          k);
+
+        GemmKernel(
+          &weight_buffer,
+          &input_buffer,
+          &output_buffer,
+          weight_group_size,
+          input_group_size,
+          k);
+
+        GetOutputFromGpu(
+          output_buffer,
+          output+i*weight_group_size*output_w+j*input_group_size,
+          output_w,
+          weight_group_size,
+          input_group_size);
+
+    }
+  }
+}
+
+template<typename T>
+void GetOutputFromGpu(
+    SharedArray<T> &_shared_array_buffer,
+    T *output_data_buffer,
+    int step_size,
+    int row_size,
+    int col_size) {
+
+    for(int i=0;i<row_size;i++) {
+      for(int j=0;j<col_size;j++) {
+        float sum = 0;
+        for(int k=0;k<16;k++) {
+          sum += _shared_array_buffer[k];
+        }
+        output_data_buffer[i*step_size+j] = sum;
+      }
     }
 }
+
+template<typename T>
+void GManager<T>::TransInput2GpuFormat(
+  T *output_data,
+  const T *input_data_buffer,
+  int input_height,
+  int input_width,
+  int input_channel,
+  int kernel_size,
+  int pad,
+  int stride) {
+
+    const T *input_data;
+
+    for(int row=-pad;row<input_height+pad-kernel_size+1;row+=stride) {
+        for(int col=-pad;col<input_width+pad-kernel_size+1;col+=stride) {
+
+            for(int chan=0;chan<input_channel;chan++) {
+
+                input_data = input_data_buffer + chan*input_height*input_width;
+
+                for(int kernel_row=0;kernel_row<kernel_size;kernel_row++) {
+                    for(int kernel_col=0;kernel_col<kernel_size;kernel_col++) {
+
+                        int new_row=row+kernel_row;
+                        int new_col=col+kernel_col;
+
+                        if(is_a_ge_zero_and_a_lt_b(new_row,input_height)&&is_a_ge_zero_and_a_lt_b(new_col,input_width)) {
+                            *output_data++ = input_data[new_row*input_width+new_col];
+                        } else {
+                            *output_data++ = 0.0;
+                        }            
+
+                    }
+                }
+
+            }
+        }
+    }    
+
+}
+
+
+template<typename T>
+void GManager<T>::LoadDataIntoGpu(
+  SharedArray<T> &_shared_array_buffer,
+  T *input_data_buffer,
+  int group_size,
+  int data_size)  {
+
+  T *input_data_buffer_ptr = input_data_buffer;
+  int pos = 0;
+  int size = data_size / 16 * 16;
+  int _size = data_size % 16;
+  for(int i=0;i<group_size;i++) {
+    for(int j=0;j<size;j++) {
+      _shared_array_buffer[pos++] = input_data_buffer_ptr++;
+    }
+    for(int j=0;j<_size;j++) {
+      _shared_array_buffer[pos++] = 0.0;
+    }
+  }
+ 
+}
+
+
 
 
 template<typename T>
@@ -258,90 +350,6 @@ GManager<T>::GManager():Max_GPU_Memory(733409) {
 }
 
 
-template<typename T>
-void GManager<T>::LoadWeightIntoGpu(
-	SharedArray<T> &_shared_array_buffer,
-	const T *input_data_buffer,
-	int data_size) {
-	for(int i=0;i<data_size;i++) {
-		_shared_array_buffer[i] = input_data_buffer[i];
-	}
-}
-
-
-template<typename T>
-T *GManager<T>::TransWeight2GpuFormat(T *original_data,int channels,int kernel_size,int output_num) {
-  int size = channels*kernel_size*kernel_size;
-  int padding = 16 - size % 16;
-
-  T *formated_data = new T[(size+padding)*output_num];
-
-  int a_pos = 0;
-  int b_pos = 0;
-  for(int i=0;i<output_num;i++) {
-      for(int j=0;j<size;j++) {
-          formated_data[a_pos++] = original_data[b_pos++];
-      }
-
-      for(int j=0;j<padding;j++) {
-          formated_data[a_pos++] = 0;
-      }
-  }
-  return formated_data;
-}
-
-
-template<typename T>
-void GManager<T>::LoadInputIntoGpu(
-    SharedArray<T> &_shared_array_buffer,
-    const T *input_data_buffer,
-    int input_height,
-    int input_width,
-    int input_channel,
-    int kernel_size,
-    int pad,
-    int stride) {
-
-    SharedArray<T> &output_data=_shared_array_buffer;
-
-    const int row_padding = 16 - (input_channel*kernel_size*kernel_size) % 16;
-
-    const T *input_data;
-
-    int array_pos = 0;
-
-    for(int row=-pad;row<input_height+pad-kernel_size+1;row+=stride) {
-        for(int col=-pad;col<input_width+pad-kernel_size+1;col+=stride) {
-
-            for(int chan=0;chan<input_channel;chan++) {
-
-                input_data = input_data_buffer + chan*input_height*input_width;
-
-                for(int kernel_row=0;kernel_row<kernel_size;kernel_row++) {
-                    for(int kernel_col=0;kernel_col<kernel_size;kernel_col++) {
-
-                        int new_row=row+kernel_row;
-                        int new_col=col+kernel_col;
-
-                        if(is_a_ge_zero_and_a_lt_b(new_row,input_height)&&is_a_ge_zero_and_a_lt_b(new_col,input_width)) {
-                            output_data[array_pos++] = input_data[new_row*input_width+new_col];
-                        } else {
-                            output_data[array_pos++] = 0.0;
-                        }            
-
-                    }
-                }
-
-            }
-
-            for(int i=0;i<row_padding;i++) {
-                 output_data[array_pos++] = 0.0;
-            }
-
-        }
-    }    
-
-}
 
 
 float *get_weight(int output_num,int channels,int kernel_size) {
@@ -387,23 +395,34 @@ int main() {
     int output_h = (height + 2 * pad - kernel_size) / stride + 1;
     int output_w = (width + 2 * pad - kernel_size) / stride + 1;
 
-
     GManager<float> gm;
     float *weight = get_weight(output_num,channels,kernel_size);
     float *input = get_input(height,width,channels);
     float *output = new float[output_h*output_w];
 
-    float *gpu_format_weight = gm.TransWeight2GpuFormat(weight,channels,kernel_size,output_num);
+    float *col_data = new float[kernel_size*kernel_size*channels*output_w*output_h];
+    gm.TransInput2GpuFormat(
+      col_data,
+      input,
+      height,
+      width,
+      channels,
+      kernel_size,
+      pad,
+      stride);
 
     gm.gpu_conv(
-      gpu_format_weight,
-      input,output,height,
-      width,channels,
+      weight,
+      input,
+      output,
+      height,
+      width,
+      channels,
       kernel_size,
       output_num,
       pad,
       stride,
-      GemmKernel); 
+      GemmKernel);
 
 }
 
