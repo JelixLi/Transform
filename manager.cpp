@@ -978,7 +978,7 @@ int main() {
     int output_w = (width + 2 * pad - kernel_size) / stride + 1; 
 
     // float *weight = get_weight(output_num,channels,kernel_size);
-    // float *input = get_input(height,width,channels);
+    float *input = get_input(height,width,channels);
     // float *output = new float[output_h*output_w];
 
     // int m = output_num; 
