@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <math.h>
 
+#define GPU
 
 #ifdef GPU
 #include "QPULib.h"
@@ -962,8 +963,8 @@ void im2col(const float *data_im, const int channels, const int height,
 
 int main() {
 
-    // auto GemmKernel = compile(gpu_gemm);
-    // GemmKernel.setNumQPUs(1);
+    auto GemmKernel = compile(gpu_gemm);
+    GemmKernel.setNumQPUs(1);
 
     int output_num = 64;
 
@@ -978,57 +979,59 @@ int main() {
     int output_w = (width + 2 * pad - kernel_size) / stride + 1; 
 
     // float *weight = get_weight(output_num,channels,kernel_size);
-    float *input = get_input(height,width,channels);
+    // float *input = get_input(height,width,channels);
     // float *output = new float[output_h*output_w];
 
     // int m = output_num; 
     // int k = channels*kernel_size*kernel_size; 
     // int n = output_w*output_h; 
 
-    int m = 1024; 
-    int k = 1024; 
-    int n = 1024; 
+    // int m = 1024; 
+    // int k = 1024; 
+    // int n = 1024; 
 
-    float *A = new float[m*k];
-    float *B = new float[k*n];
-    float *C = new float[m*n];
+    // float *A = new float[m*k];
+    // float *B = new float[k*n];
+    // float *C = new float[m*n];
 
+
+    // clock_t start=clock();
+    // // im2col(input,channels,height,width,kernel_size,pad,stride,B);
+    // Gemmer gm;
+    // gm.sgemm(m,n,k,A,B,C);
+    // clock_t end=clock();
+    // printf("cpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
+
+    GManager<float> gm;
+    float *weight = get_weight(output_num,channels,kernel_size);
+    float *input = get_input(height,width,channels);
+    float *output = new float[output_h*output_w];
 
     clock_t start=clock();
-    // im2col(input,channels,height,width,kernel_size,pad,stride,B);
-    Gemmer gm;
-    gm.sgemm(m,n,k,A,B,C);
+    float *col_data = new float[kernel_size*kernel_size*channels*output_w*output_h];
+    gm.TransInput2GpuFormat(
+      col_data,
+      input,
+      height,
+      width,
+      channels,
+      kernel_size,
+      pad,
+      stride);
+
+    gm.gpu_conv(
+      weight,
+      col_data,
+      output,
+      height,
+      width,
+      channels,
+      kernel_size,
+      output_num,
+      pad,
+      stride,
+      GemmKernel);
     clock_t end=clock();
-    printf("cpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
-
-    // GManager<float> gm;
-    // float *weight = get_weight(output_num,channels,kernel_size);
-    // float *input = get_input(height,width,channels);
-    // float *output = new float[output_h*output_w];
-
-    // float *col_data = new float[kernel_size*kernel_size*channels*output_w*output_h];
-    // gm.TransInput2GpuFormat(
-    //   col_data,
-    //   input,
-    //   height,
-    //   width,
-    //   channels,
-    //   kernel_size,
-    //   pad,
-    //   stride);
-
-    // gm.gpu_conv(
-    //   weight,
-    //   col_data,
-    //   output,
-    //   height,
-    //   width,
-    //   channels,
-    //   kernel_size,
-    //   output_num,
-    //   pad,
-    //   stride,
-    //   GemmKernel);
-
+    printf("gpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 }
 
