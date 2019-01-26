@@ -390,7 +390,7 @@ float *get_input(int height,int width,int channels) {
 int main() {
 
     auto GemmKernel = compile(gpu_gemm);
-    GemmKernel.setNumQPUs(1);
+    GemmKernel.setNumQPUs(12);
 
     int output_num = 64;
 
