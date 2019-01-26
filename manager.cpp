@@ -343,7 +343,7 @@ void GManager<T>::Init_Gpu_Memory() {
 
 
 template<typename T>
-GManager<T>::GManager():Max_GPU_Memory(733409) {
+GManager<T>::GManager():Max_GPU_Memory(733409-100) {
 	Init_Gpu_Memory();
 }
 
