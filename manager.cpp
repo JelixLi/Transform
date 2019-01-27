@@ -70,7 +70,7 @@ void SharedArray<T>::dealloc() {
 #endif 
 
 
-void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
+void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k,Int output_offset) {
     Int qpuNums = numQPUs();
 
     Int iNNC = 16;
@@ -105,7 +105,7 @@ void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
            End
            receive(x);
            receive(y);
-           store(sum,C + ind + ((r*n+c)<<4));
+           store(sum,C + ind + ((r*n+c)<<4) + output_offset);
       End 
     End   
 }
@@ -231,10 +231,11 @@ void GManager<T>::gpu_conv(
         GemmKernel(
           &weight_buffer,
           &input_buffer,
-          &output_buffer+weight_group_size*input_group_size,
+          &output_buffer,
           weight_group_size,
           input_group_size,
-          k);
+          k,
+          weight_group_size*input_group_size);
 
         // GetOutputFromGpu(
         //   output_buffer,
