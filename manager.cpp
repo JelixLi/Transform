@@ -199,14 +199,16 @@ void GManager<T>::gpu_conv(
     SharedArray<T>& input_buffer = _gp_array[1];
     SharedArray<T>& output_buffer = _gp_array[2];
 
+    for(int i=0;i<2;i++) {
+      GemmKernel(
+        &weight_buffer,
+        &input_buffer,
+        &output_buffer,
+        1000,
+        1000,
+        512);
+    }
 
-    GemmKernel(
-      &weight_buffer,
-      &input_buffer,
-      &output_buffer,
-      280,
-      280,
-      256);
 
   //   int Gpu_Memory_Basic_Block = Max_GPU_Memory/k/3;
 
