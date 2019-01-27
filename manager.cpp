@@ -409,7 +409,6 @@ int main() {
     float *input = get_input(height,width,channels);
     float *output = new float[output_h*output_w];
 
-    clock_t start=clock();
     float *col_data = new float[kernel_size*kernel_size*channels*output_w*output_h];
     gm.TransInput2GpuFormat(
       col_data,
@@ -421,6 +420,7 @@ int main() {
       pad,
       stride);
 
+    clock_t start=clock();
     gm.gpu_conv(
       weight,
       col_data,
