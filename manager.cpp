@@ -200,7 +200,7 @@ void GManager<T>::gpu_conv(
     SharedArray<T>& input_buffer = _gp_array[1];
     SharedArray<T>& output_buffer = _gp_array[2];
 
-    int Gpu_Memory_Basic_Block = 100;
+    int Gpu_Memory_Basic_Block = 350;
 
     int m_group = m / Gpu_Memory_Basic_Block;
     int _m_group = m % Gpu_Memory_Basic_Block;
@@ -264,12 +264,12 @@ void GManager<T>::GetOutputFromGpu(
     for(int i=0;i<row_size;i++) {
       for(int j=0;j<col_size;j++) {
         float sum = 0;
-        for(int k=0;k<16;k+=4) {
-            sum += _shared_array_buffer[pos+k];
-            sum += _shared_array_buffer[pos+k+1];
-            sum += _shared_array_buffer[pos+k+2];
-            sum += _shared_array_buffer[pos+k+3];
-        }
+        // for(int k=0;k<16;k+=4) {
+        //     sum += _shared_array_buffer[pos+k];
+        //     sum += _shared_array_buffer[pos+k+1];
+        //     sum += _shared_array_buffer[pos+k+2];
+        //     sum += _shared_array_buffer[pos+k+3];
+        // }
         pos += 16;
         output_data_buffer[(i+row_offset)*step_size+j+col_offset] = sum;
       }
