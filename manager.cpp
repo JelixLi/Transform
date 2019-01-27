@@ -275,8 +275,11 @@ void GManager<T>::GetOutputFromGpu(
         }
         pos += 16;
         // output_data_buffer[i*step_size+j] = sum;
+        cout<<i*step_size+j<<" ";
       }
+      cout<<endl;
     }
+    cout<<endl;
 }
 
 template<typename T>
