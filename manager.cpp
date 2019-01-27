@@ -256,9 +256,9 @@ void GManager<T>::gpu_conv(
         //   output_w,
         //   weight_group_size,
         //   input_group_size);
-        int num = i*weight_group_size*output_w+j*input_group_size;
-        int r = num / output_w;
-        int c = num % output_w;
+        int num = i*weight_group_size*n+j*input_group_size;
+        int r = num / n;
+        int c = num % n;
         cout<<r<<" "<<c<<endl;
     }
   }
