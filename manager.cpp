@@ -199,19 +199,6 @@ void GManager<T>::gpu_conv(
     SharedArray<T>& input_buffer = _gp_array[1];
     SharedArray<T>& output_buffer = _gp_array[2];
 
-    // for(int num=100;num<=1200;num+=5) {
-    //   clock_t start=clock();
-    //   GemmKernel(
-    //     &weight_buffer,
-    //     &input_buffer,
-    //     &output_buffer,
-    //     num,
-    //     num,
-    //     512);
-    //   clock_t end=clock();
-    //   printf("num=%d gpu_cost: %f\n",num,(end-start)/double(CLOCKS_PER_SEC)*1000);
-    // }
-
     int Gpu_Memory_Basic_Block = 200;
 
     int m_group = m / Gpu_Memory_Basic_Block;
@@ -219,8 +206,6 @@ void GManager<T>::gpu_conv(
 
     int n_group = n / Gpu_Memory_Basic_Block;
     int _n_group = n % Gpu_Memory_Basic_Block;
-
-    cout<<m<<" "<<n<<endl;
 
     for(int i=0;i<m_group+1;i++) {
       int weight_offset = i*k*Gpu_Memory_Basic_Block;
@@ -250,16 +235,12 @@ void GManager<T>::gpu_conv(
           input_group_size,
           k);
 
-        // GetOutputFromGpu(
-        //   output_buffer,
-        //   output+i*weight_group_size*output_w+j*input_group_size,
-        //   output_w,
-        //   weight_group_size,
-        //   input_group_size);
-        int num = i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block;
-        int r = num / n;
-        int c = num % n;
-        cout<<r<<" "<<c<<endl;
+        GetOutputFromGpu(
+          output_buffer,
+          output+i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block,
+          n,
+          weight_group_size,
+          input_group_size);
     }
   }
 }
