@@ -274,7 +274,7 @@ void GManager<T>::GetOutputFromGpu(
           // sum += _shared_array_buffer[pos+k];
         }
         pos += 16;
-        output_data_buffer[i*step_size+j] = sum;
+        // output_data_buffer[i*step_size+j] = sum;
       }
     }
 }
