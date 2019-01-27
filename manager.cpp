@@ -199,69 +199,68 @@ void GManager<T>::gpu_conv(
     SharedArray<T>& input_buffer = _gp_array[1];
     SharedArray<T>& output_buffer = _gp_array[2];
 
-    for(int num=100;num<=1200;num+=5) {
-      clock_t start=clock();
-      GemmKernel(
-        &weight_buffer,
-        &input_buffer,
-        &output_buffer,
-        num,
-        num,
-        512);
-      clock_t end=clock();
-      printf("num=%d gpu_cost: %f\n",num,(end-start)/double(CLOCKS_PER_SEC)*1000);
+    // for(int num=100;num<=1200;num+=5) {
+    //   clock_t start=clock();
+    //   GemmKernel(
+    //     &weight_buffer,
+    //     &input_buffer,
+    //     &output_buffer,
+    //     num,
+    //     num,
+    //     512);
+    //   clock_t end=clock();
+    //   printf("num=%d gpu_cost: %f\n",num,(end-start)/double(CLOCKS_PER_SEC)*1000);
+    // }
+
+    int Gpu_Memory_Basic_Block = 200;
+
+    int m_group = m / Gpu_Memory_Basic_Block;
+    int _m_group = m % Gpu_Memory_Basic_Block;
+
+    int n_group = n / Gpu_Memory_Basic_Block;
+    int _n_group = n % Gpu_Memory_Basic_Block;
+
+    cout<<m_group<<" "<<n_group<<endl;
+    cout<<_m_group<<" "<<_n_group<<endl;
+    cout<<Gpu_Memory_Basic_Block<<endl;
+
+    for(int i=0;i<m_group+1;i++) {
+      int weight_offset = i*k*Gpu_Memory_Basic_Block;
+      int weight_group_size = ((i==m_group||m_group==0)?_m_group:Gpu_Memory_Basic_Block);
+
+      LoadDataIntoGpu(
+        weight_buffer,
+        weight+weight_offset,
+        weight_group_size,
+        k);
+
+      for(int j=0;j<n_group+1;j++) {
+        int input_offset = j*k*Gpu_Memory_Basic_Block;
+        int input_group_size = ((j==n_group||n_group==0)?_n_group:Gpu_Memory_Basic_Block);
+
+        LoadDataIntoGpu(
+          input_buffer,
+          input+input_offset,
+          input_group_size,
+          k);
+
+        GemmKernel(
+          &weight_buffer,
+          &input_buffer,
+          &output_buffer,
+          weight_group_size,
+          input_group_size,
+          k/16);
+
+        // GetOutputFromGpu(
+        //   output_buffer,
+        //   output+i*weight_group_size*output_w+j*input_group_size,
+        //   output_w,
+        //   weight_group_size,
+        //   input_group_size);
+
     }
-
-
-
-  //   int Gpu_Memory_Basic_Block = Max_GPU_Memory/k/3;
-
-  //   int m_group = m / Gpu_Memory_Basic_Block;
-  //   int _m_group = m % Gpu_Memory_Basic_Block;
-
-  //   int n_group = n / Gpu_Memory_Basic_Block;
-  //   int _n_group = n % Gpu_Memory_Basic_Block;
-
-  //   cout<<m_group<<" "<<n_group<<endl;
-  //   cout<<_m_group<<" "<<_n_group<<endl;
-  //   cout<<Gpu_Memory_Basic_Block<<endl;
-
-  //   for(int i=0;i<m_group+1;i++) {
-  //     int weight_offset = i*k*Gpu_Memory_Basic_Block;
-  //     int weight_group_size = ((i==m_group||m_group==0)?_m_group:Gpu_Memory_Basic_Block);
-  //     for(int j=0;j<n_group+1;j++) {
-  //       int input_offset = j*k*Gpu_Memory_Basic_Block;
-  //       int input_group_size = ((j==n_group||n_group==0)?_n_group:Gpu_Memory_Basic_Block);
-
-  //       LoadDataIntoGpu(
-  //         weight_buffer,
-  //         weight+weight_offset,
-  //         weight_group_size,
-  //         k);
-
-  //       LoadDataIntoGpu(
-  //         input_buffer,
-  //         input+input_offset,
-  //         input_group_size,
-  //         k);
-
-  //       GemmKernel(
-  //         &weight_buffer,
-  //         &input_buffer,
-  //         &output_buffer,
-  //         weight_group_size,
-  //         input_group_size,
-  //         k/16);
-
-  //       // GetOutputFromGpu(
-  //       //   output_buffer,
-  //       //   output+i*weight_group_size*output_w+j*input_group_size,
-  //       //   output_w,
-  //       //   weight_group_size,
-  //       //   input_group_size);
-
-  //   }
-  // }
+  }
 }
 
 template<typename T>
@@ -416,6 +415,8 @@ int main() {
     float *output = new float[output_h*output_w];
 
     float *col_data = new float[kernel_size*kernel_size*channels*output_w*output_h];
+
+    clock_t start=clock();
     gm.TransInput2GpuFormat(
       col_data,
       input,
@@ -439,6 +440,9 @@ int main() {
       pad,
       stride,
       GemmKernel);
+
+    clock_t end=clock();
+    printf("gpu_cost: %f\n",num,(end-start)/double(CLOCKS_PER_SEC)*1000);
 
 }
 
