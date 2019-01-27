@@ -231,18 +231,18 @@ void GManager<T>::gpu_conv(
         GemmKernel(
           &weight_buffer,
           &input_buffer,
-          &output_buffer,
+          &output_buffer+weight_group_size*input_group_size,
           weight_group_size,
           input_group_size,
           k);
 
-        GetOutputFromGpu(
-          output_buffer,
-          output,
-          i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block,
-          n,
-          weight_group_size,
-          input_group_size);
+        // GetOutputFromGpu(
+        //   output_buffer,
+        //   output,
+        //   i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block,
+        //   n,
+        //   weight_group_size,
+        //   input_group_size);
     }
   }
 }
@@ -271,25 +271,6 @@ void GManager<T>::GetOutputFromGpu(
         //     sum += _shared_array_buffer[pos+k+3];
         // }
 
-        sum += _shared_array_buffer[pos];
-        sum += _shared_array_buffer[pos+1];
-        sum += _shared_array_buffer[pos+2];
-        sum += _shared_array_buffer[pos+3];
-
-        sum += _shared_array_buffer[pos+4];
-        sum += _shared_array_buffer[pos+5];
-        sum += _shared_array_buffer[pos+6];
-        sum += _shared_array_buffer[pos+7];
-
-        sum += _shared_array_buffer[pos+8];
-        sum += _shared_array_buffer[pos+9];
-        sum += _shared_array_buffer[pos+10];
-        sum += _shared_array_buffer[pos+11];
-
-        sum += _shared_array_buffer[pos+12];
-        sum += _shared_array_buffer[pos+13];
-        sum += _shared_array_buffer[pos+14];
-        sum += _shared_array_buffer[pos+15];
 
         pos += 16;
         output_data_buffer[(i+row_offset)*step_size+j+col_offset] = sum;
