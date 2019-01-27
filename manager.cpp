@@ -220,10 +220,6 @@ void GManager<T>::gpu_conv(
     int n_group = n / Gpu_Memory_Basic_Block;
     int _n_group = n % Gpu_Memory_Basic_Block;
 
-    cout<<m_group<<" "<<n_group<<endl;
-    cout<<_m_group<<" "<<_n_group<<endl;
-    cout<<Gpu_Memory_Basic_Block<<endl;
-
     for(int i=0;i<m_group+1;i++) {
       int weight_offset = i*k*Gpu_Memory_Basic_Block;
       int weight_group_size = ((i==m_group||m_group==0)?_m_group:Gpu_Memory_Basic_Block);
@@ -250,14 +246,14 @@ void GManager<T>::gpu_conv(
           &output_buffer,
           weight_group_size,
           input_group_size,
-          k/16);
+          k);
 
-        // GetOutputFromGpu(
-        //   output_buffer,
-        //   output+i*weight_group_size*output_w+j*input_group_size,
-        //   output_w,
-        //   weight_group_size,
-        //   input_group_size);
+        GetOutputFromGpu(
+          output_buffer,
+          output+i*weight_group_size*output_w+j*input_group_size,
+          output_w,
+          weight_group_size,
+          input_group_size);
 
     }
   }
@@ -270,13 +266,14 @@ void GManager<T>::GetOutputFromGpu(
     int step_size,
     int row_size,
     int col_size) {
-
+    int pos = 0;
     for(int i=0;i<row_size;i++) {
       for(int j=0;j<col_size;j++) {
         float sum = 0;
         for(int k=0;k<16;k++) {
-          sum += _shared_array_buffer[k];
+          sum += _shared_array_buffer[pos+k];
         }
+        pos += 16;
         output_data_buffer[i*step_size+j] = sum;
       }
     }
