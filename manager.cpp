@@ -270,7 +270,6 @@ void GManager<T>::GetOutputFromGpu(
           sum += _shared_array_buffer[pos+k];
         }
         pos += 16;
-        cout<<(i+row_offset)<<" "<<(j+col_offset)<<endl;
         output_data_buffer[(i+row_offset)*step_size+j+col_offset] = sum;
       }
 
@@ -408,7 +407,7 @@ int main() {
     GManager<float> gm;
     float *weight = get_weight(output_num,channels,kernel_size);
     float *input = get_input(height,width,channels);
-    float *output = new float[output_h*output_w];
+    float *output = new float[output_h*output_w*output_num];
 
     float *col_data = new float[kernel_size*kernel_size*channels*output_w*output_h];
 
