@@ -220,6 +220,8 @@ void GManager<T>::gpu_conv(
     int n_group = n / Gpu_Memory_Basic_Block;
     int _n_group = n % Gpu_Memory_Basic_Block;
 
+    cout<<output_h<<" "<<output_w<<endl;
+
     for(int i=0;i<m_group+1;i++) {
       int weight_offset = i*k*Gpu_Memory_Basic_Block;
       int weight_group_size = ((i==m_group||m_group==0)?_m_group:Gpu_Memory_Basic_Block);
@@ -254,7 +256,10 @@ void GManager<T>::gpu_conv(
         //   output_w,
         //   weight_group_size,
         //   input_group_size);
-        cout<<i*weight_group_size*output_w+j*input_group_size<<endl;
+        int num = i*weight_group_size*output_w+j*input_group_size;
+        int r = num / output_w;
+        int c = num % output_w;
+        cout<<r<<" "<<c<<endl;
     }
   }
 }
