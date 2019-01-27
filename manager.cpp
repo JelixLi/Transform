@@ -136,6 +136,7 @@ public:
   void GetOutputFromGpu(
     SharedArray<T> &_shared_array_buffer,
     T *output_data_buffer,
+    int offset,
     int step_size,
     int row_size,
     int col_size);
@@ -237,7 +238,8 @@ void GManager<T>::gpu_conv(
 
         GetOutputFromGpu(
           output_buffer,
-          output+i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block,
+          output,
+          i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block,
           n,
           weight_group_size,
           input_group_size);
@@ -249,19 +251,24 @@ template<typename T>
 void GManager<T>::GetOutputFromGpu(
     SharedArray<T> &_shared_array_buffer,
     T *output_data_buffer,
+    int offset,
     int step_size,
     int row_size,
     int col_size) {
+
     int pos = 0;
+    T *output = output_data_buffer + offset;
+    int row_offset = offset / step_size;
+    int col_offset = offset % step_size;
+
     for(int i=0;i<row_size;i++) {
       for(int j=0;j<col_size;j++) {
         float sum = 0;
         for(int k=0;k<16;k++) {
-          // sum += _shared_array_buffer[pos+k];
+          sum += _shared_array_buffer[pos+k];
         }
         pos += 16;
-        output_data_buffer[i*step_size+j] = sum;
-
+        output_data_buffer[(i+row_offset)*step_size+j+col_offset] = sum;
       }
 
     }
