@@ -199,15 +199,19 @@ void GManager<T>::gpu_conv(
     SharedArray<T>& input_buffer = _gp_array[1];
     SharedArray<T>& output_buffer = _gp_array[2];
 
-    for(int i=0;i<2;i++) {
+    for(int num=100;num<=1200;num+=5) {
+      clock_t start=clock();
       GemmKernel(
         &weight_buffer,
         &input_buffer,
         &output_buffer,
-        1000,
-        1000,
+        num,
+        num,
         512);
+      clock_t end=clock();
+      printf("gpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
     }
+
 
 
   //   int Gpu_Memory_Basic_Block = Max_GPU_Memory/k/3;
@@ -422,7 +426,7 @@ int main() {
       pad,
       stride);
 
-    clock_t start=clock();
+
     gm.gpu_conv(
       weight,
       col_data,
@@ -435,7 +439,6 @@ int main() {
       pad,
       stride,
       GemmKernel);
-    clock_t end=clock();
-    printf("gpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
+
 }
 
