@@ -257,10 +257,10 @@ void GManager<T>::GetOutputFromGpu(
       for(int j=0;j<col_size;j++) {
         float sum = 0;
         for(int k=0;k<16;k++) {
-          // sum += _shared_array_buffer[pos+k];
+          sum += _shared_array_buffer[pos+k];
         }
         pos += 16;
-        // output_data_buffer[i*step_size+j] = sum;
+        output_data_buffer[i*step_size+j] = sum;
 
       }
 
