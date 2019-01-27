@@ -442,7 +442,7 @@ int main() {
       GemmKernel);
 
     clock_t end=clock();
-    printf("gpu_cost: %f\n",num,(end-start)/double(CLOCKS_PER_SEC)*1000);
+    printf("gpu_cost: %f\n",(end-start)/double(CLOCKS_PER_SEC)*1000);
 
 }
 
