@@ -220,7 +220,7 @@ void GManager<T>::gpu_conv(
     int n_group = n / Gpu_Memory_Basic_Block;
     int _n_group = n % Gpu_Memory_Basic_Block;
 
-    cout<<output_h<<" "<<output_w<<endl;
+    cout<<m<<" "<<n<<endl;
 
     for(int i=0;i<m_group+1;i++) {
       int weight_offset = i*k*Gpu_Memory_Basic_Block;
