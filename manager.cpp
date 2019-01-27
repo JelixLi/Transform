@@ -248,13 +248,13 @@ void GManager<T>::gpu_conv(
           input_group_size,
           k);
 
-        GetOutputFromGpu(
-          output_buffer,
-          output+i*weight_group_size*output_w+j*input_group_size,
-          output_w,
-          weight_group_size,
-          input_group_size);
-
+        // GetOutputFromGpu(
+        //   output_buffer,
+        //   output+i*weight_group_size*output_w+j*input_group_size,
+        //   output_w,
+        //   weight_group_size,
+        //   input_group_size);
+        cout<<i*weight_group_size*output_w+j*input_group_size<<endl;
     }
   }
 }
@@ -275,11 +275,11 @@ void GManager<T>::GetOutputFromGpu(
         }
         pos += 16;
         // output_data_buffer[i*step_size+j] = sum;
-        cout<<i*step_size+j<<" ";
+
       }
-      cout<<endl;
+
     }
-    cout<<endl;
+
 }
 
 template<typename T>
