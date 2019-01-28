@@ -226,12 +226,20 @@ void GManager<T>::gpu_conv(
         k);
 
       for(int j=0;j<n_group+1;j++) {
-        int input_offset = j*k*Gpu_Memory_Basic_Block;
+        // int input_offset = j*k*Gpu_Memory_Basic_Block;
+        int input_offset = j*Gpu_Memory_Basic_Block;
         int input_group_size = ((j==n_group||n_group==0)?_n_group:Gpu_Memory_Basic_Block);
+
+        // LoadDataIntoGpu(
+        //   input_buffer,
+        //   input+input_offset,
+        //   input_group_size,
+        //   k);
 
         LoadDataIntoGpu(
           input_buffer,
           input+input_offset,
+          n,
           input_group_size,
           k);
 
@@ -337,6 +345,45 @@ template<typename T>
 void GManager<T>::LoadDataIntoGpu(
   SharedArray<T> &_shared_array_buffer,
   T *input_data_buffer,
+  int step_size,
+  int group_size,
+  int data_size)  {
+
+  register T *input_data_buffer_ptr;
+  register int pos = 0;
+  int _size = 16 - data_size % 16;
+
+  int n = data_size / 4;
+  int _n = data_size % 4;
+
+  for(int i=0;i<group_size;i++) {
+    input_data_buffer_ptr = input_data_buffer + i;
+    for(register int j=0;j<n;j+=4) {
+      _shared_array_buffer[pos++] = *input_data_buffer_ptr;
+      input_data_buffer_ptr = input_data_buffer_ptr + step_size;
+      _shared_array_buffer[pos++] = *input_data_buffer_ptr;
+      input_data_buffer_ptr = input_data_buffer_ptr + step_size;
+      _shared_array_buffer[pos++] = *input_data_buffer_ptr;
+      input_data_buffer_ptr = input_data_buffer_ptr + step_size;
+      _shared_array_buffer[pos++] = *input_data_buffer_ptr;
+      input_data_buffer_ptr = input_data_buffer_ptr + step_size;
+    }
+    for(register int j=0;j<_n;j++) {
+      _shared_array_buffer[pos++] = *input_data_buffer_ptr;
+      input_data_buffer_ptr = input_data_buffer_ptr + step_size;
+    }
+    for(register int j=0;j<_size;j++) {
+      _shared_array_buffer[pos++] = 0.0;
+    }
+  }
+ 
+}
+
+
+template<typename T>
+void GManager<T>::LoadColDataIntoGpu(
+  SharedArray<T> &_shared_array_buffer,
+  T *input_data_buffer,
   int group_size,
   int data_size)  {
 
@@ -434,8 +481,17 @@ void im2col(const float *data_im, const int channels, const int height,
                     if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
                         int n = output_w/4;
                         int _n = output_w/4;
-                        for (int output_cols = output_w; output_cols; output_cols--) {
-                            *(data_col++) = 0;
+                        // for (int output_cols = output_w; output_cols; output_cols--) {
+                        //     *(data_col++) = 0;
+                        // }
+                        for(int i=0;i<n;i+=4) {
+                           *(data_col++) = 0;
+                           *(data_col++) = 0;
+                           *(data_col++) = 0;
+                           *(data_col++) = 0;
+                        }
+                        for(int i=0;i<n;i++) {
+                           *(data_col++) = 0;
                         }
                     } else {
                         int input_col = -pad + kernel_col;
