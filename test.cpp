@@ -3,7 +3,7 @@
 
 using namespace std;
 
-void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
+void gpu_transposition(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
     Int qpuNums = numQPUs();
 
     Int inc = 16;
