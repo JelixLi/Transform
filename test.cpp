@@ -3,22 +3,22 @@
 
 using namespace std;
 
-void gpu_transposition(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
+void gpu_transposition(Ptr<Int> A,Ptr<Int> B,Ptr<Int> C,Int m,Int n,Int k) {
     Int qpuNums = numQPUs();
 
     Int inc = 16;
     Int ind = index();
     Int inm = me()*k;
 
-    Ptr<Float> first_p = A+ind+inm;
-    Ptr<Float> first_q = B+ind;
+    Ptr<Int> first_p = A+ind+inm;
+    Ptr<Int> first_q = B+ind;
 
-    Ptr<Float> p;
-    Ptr<Float> q;
+    Ptr<Int> p;
+    Ptr<Int> q;
 
-    Float x;
-    Float y;
-    Float sum;
+    Int x;
+    Int y;
+    Int sum;
 
     Int output_offset = ind*n;
 
@@ -40,12 +40,13 @@ void gpu_transposition(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k)
            End
            receive(x);
            receive(y);
+           sum = ((r<<4)*n+c) + output_offset;
            store(sum,C + ((r<<4)*n+c) + output_offset);
       End 
     End 	
 }
 
-void Init(SharedArray<float> &A,int m,int n) {
+void Init(SharedArray<int> &A,int m,int n) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
       A[i*n+j] = i*n+j;
@@ -54,10 +55,10 @@ void Init(SharedArray<float> &A,int m,int n) {
 
 }
 
-void cpu_gemm(SharedArray<float> &A,SharedArray<float>& B,float *C,int m,int n,int k) {
+void cpu_gemm(SharedArray<int> &A,SharedArray<int>& B,int *C,int m,int n,int k) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
-      float sum = 0;
+      int sum = 0;
       for(int c=0;c<k;c++) {
         sum += A[i*k+c]*B[c*n+j];
       }
@@ -69,14 +70,14 @@ void cpu_gemm(SharedArray<float> &A,SharedArray<float>& B,float *C,int m,int n,i
 int main() {
 
   auto GemmKernel = compile(gpu_transposition);
-  GemmKernel.setNumQPUs(12);
+  GemmKernel.setNumQPUs(1);
 
   int m = 1;
   int k = 16;
   int n = 2;
-  SharedArray<float> A(m*k),B(k*n),C(m*n*16);
-  float *D = new float[m*n];
-  float *E = new float[m*n];
+  SharedArray<int> A(m*k),B(k*n),C(m*n*16);
+  int *D = new int[m*n];
+  int *E = new int[m*n];
   Init(A,m,k);
   Init(B,n,k);
   GemmKernel(&A,&B,&C,m,n,k);
@@ -94,7 +95,7 @@ int main() {
 
   // for(int i=0;i<m;i++) {
   //   for(int j=0;j<n;j++) {
-  //     float sum = 0;
+  //     int sum = 0;
   //     for(int k=0;k<16;k++) {
   //       sum += C[(i+k)*n+j];
   //     }
