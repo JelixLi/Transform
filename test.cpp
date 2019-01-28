@@ -73,7 +73,7 @@ int main() {
 
   int m = 1;
   int k = 16;
-  int n = 1;
+  int n = 2;
   SharedArray<float> A(m*k),B(k*n),C(m*n*16);
   float *D = new float[m*n];
   float *E = new float[m*n];
