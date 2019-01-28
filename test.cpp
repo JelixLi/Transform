@@ -71,38 +71,47 @@ int main() {
   auto GemmKernel = compile(gpu_transposition);
   GemmKernel.setNumQPUs(12);
 
-  int m = 10;
-  int k = 32;
-  int n = 10;
+  int m = 2;
+  int k = 16;
+  int n = 2;
   SharedArray<float> A(m*k),B(k*n),C(m*n*16);
   float *D = new float[m*n];
   float *E = new float[m*n];
   Init(A,m,k);
   Init(B,k,n);
   GemmKernel(&A,&B,&C,m,n,k);
-  cpu_gemm(A,B,D,m,n,k);
 
 
-  for(int i=0;i<m;i++) {
+  for(int i=0;i<m*16;i++) {
     for(int j=0;j<n;j++) {
-      float sum = 0;
-      for(int k=0;k<16;k++) {
-        sum += C[(i+k)*n+j];
-      }
-      E[i*n+j] = sum;
+      cout<<C[i*n+j]<<" ";
     }
+    cout<<endl;
   }
 
-  for(int i=0;i<m;i++) {
-    for(int j=0;j<n;j++) {
-      if(int(D[i*n+j])!=int(E[i*n+j])) {
-        cout<<"error"<<endl;
-        break;
-      }
-    }
-  }
+  // cpu_gemm(A,B,D,m,n,k);
 
-  cout<<"success"<<endl;
+
+  // for(int i=0;i<m;i++) {
+  //   for(int j=0;j<n;j++) {
+  //     float sum = 0;
+  //     for(int k=0;k<16;k++) {
+  //       sum += C[(i+k)*n+j];
+  //     }
+  //     E[i*n+j] = sum;
+  //   }
+  // }
+
+  // for(int i=0;i<m;i++) {
+  //   for(int j=0;j<n;j++) {
+  //     if(int(D[i*n+j])!=int(E[i*n+j])) {
+  //       cout<<"error"<<endl;
+  //       return 0;
+  //     }
+  //   }
+  // }
+
+  // cout<<"success"<<endl;
 
   return 0;
 }
