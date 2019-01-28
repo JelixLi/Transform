@@ -41,7 +41,7 @@ void gpu_transposition(Ptr<Int> A,Ptr<Int> B,Ptr<Int> C,Int m,Int n,Int k) {
            receive(x);
            receive(y);
            // store(sum,C + ((r<<4)*n+c) + output_offset);
-           store(output_offset,C + output_offset);
+           store(output_offset,C);
       End 
     End 	
 }
