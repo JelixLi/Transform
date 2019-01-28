@@ -243,13 +243,13 @@ void GManager<T>::gpu_conv(
           input_group_size,
           k);
 
-        // GetOutputFromGpu(
-        //   output_buffer,
-        //   output,
-        //   i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block,
-        //   n,
-        //   weight_group_size,
-        //   input_group_size);
+        GetOutputFromGpu(
+          output_buffer,
+          output,
+          i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block,
+          n,
+          weight_group_size,
+          input_group_size);
     }
   }
 }
@@ -435,15 +435,15 @@ int main() {
     float *col_data = new float[kernel_size*kernel_size*channels*output_w*output_h];
 
     clock_t start=clock();
-    gm.TransInput2GpuFormat(
-      col_data,
-      input,
-      height,
-      width,
-      channels,
-      kernel_size,
-      pad,
-      stride);
+    // gm.TransInput2GpuFormat(
+    //   col_data,
+    //   input,
+    //   height,
+    //   width,
+    //   channels,
+    //   kernel_size,
+    //   pad,
+    //   stride);
 
 
     gm.gpu_conv(
