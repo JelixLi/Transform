@@ -73,7 +73,8 @@ void gpu_test(Ptr<Int> C) {
     Int a = *C;
     Int b = a;
     For(Int c=0,c<15,c=c+1)
-      b = b + rotate(a,1);
+      a = rotate(a,1);
+      b = b + a;
     End
     store(b,C);
 }
