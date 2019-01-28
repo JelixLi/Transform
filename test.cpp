@@ -46,14 +46,6 @@ using namespace std;
 //     End 	
 // }
 
-
-void gpu_test(Ptr<Int> C) {
-
-    Int ind = index()*2;
-    store(ind,C + ind + 16);
- 
-}
-
 void Init(SharedArray<int> &A,int m,int n) {
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
@@ -75,6 +67,20 @@ void cpu_gemm(SharedArray<int> &A,SharedArray<int>& B,int *C,int m,int n,int k) 
   }
 }
 
+void gpu_test(Ptr<Int> C) {
+
+    Int ind = index();
+    Int a = *C;
+    Int b = 0;
+    For(Int c=0,c<16,c=c+1)
+      rotate(a,1)
+      b = b + a
+    End
+    store(b,C);
+}
+
+
+
 int main() {
 
   // auto GemmKernel = compile(gpu_transposition);
@@ -86,20 +92,22 @@ int main() {
   int m = 1;
   int k = 16;
   int n = 2;
-  SharedArray<int> A(m*k),B(k*n),C(m*n*16);
+  SharedArray<int> A(m*k),B(k*n),C(16);
   int *D = new int[m*n];
   int *E = new int[m*n];
   Init(A,m,k);
   Init(B,n,k);
   // GemmKernel(&A,&B,&C,m,n,k);
+  for(int i=0;i<16;i++) {
+    C[i] = i;
+  }
+
   GemmKernel(&C);
 
-  for(int i=0;i<m*16;i++) {
-    for(int j=0;j<n;j++) {
-      cout<<C[i*n+j]<<" ";
-    }
-    cout<<endl;
+  for(int i=0;i<16;i++) {
+    cout<<C[i]<<" ";
   }
+  cout<<endl;
 
   // cpu_gemm(A,B,D,m,n,k);
 
