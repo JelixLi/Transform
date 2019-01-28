@@ -71,10 +71,10 @@ void gpu_test(Ptr<Int> C) {
 
     Int ind = index();
     Int a = *C;
-    Int b = 0;
-    For(Int c=0,c<16,c=c+1)
-      rotate(a,1)
-      b = b + a
+    Int b = a;
+    For(Int c=0,c<15,c=c+1)
+      rotate(a,1);
+      b = b + a;
     End
     store(b,C);
 }
