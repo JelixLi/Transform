@@ -86,6 +86,7 @@ void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k,Int outpu
     Float x;
     Float y;
     Float sum;
+    Float ans;
 
     For(Int r=me(),r<m,r=r+qpuNums) 
       For(Int c=0,c<n,c++)
@@ -105,7 +106,12 @@ void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k,Int outpu
            End
            receive(x);
            receive(y);
-           store(sum,C + ind + ((r*n+c)<<4) + output_offset);
+           ans = sum;
+           For(Int c=0,c<15,c=c+1)
+              sum = rotate(sum,1);
+              ans = ans + sum;
+           End
+           store(ans,C + ind + ((r*n+c)<<4) + output_offset);
       End 
     End   
 }
@@ -208,7 +214,6 @@ void GManager<T>::gpu_conv(
     int n_group = n / Gpu_Memory_Basic_Block;
     int _n_group = n % Gpu_Memory_Basic_Block;
 
-    int Block_Count = 0;
 
     for(int i=0;i<m_group+1;i++) {
       int weight_offset = i*k*Gpu_Memory_Basic_Block;
@@ -238,9 +243,6 @@ void GManager<T>::gpu_conv(
           input_group_size,
           k,
           Block_Count*weight_group_size*input_group_size);
-
-
-        Block_Count++;
 
         // GetOutputFromGpu(
         //   output_buffer,
