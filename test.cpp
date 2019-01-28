@@ -50,7 +50,7 @@ using namespace std;
 void gpu_test(Ptr<Int> C) {
 
     Int ind = index()*2;
-    store(ind,C + ind + 32);
+    store(ind,C + ind + 16);
  
 }
 
