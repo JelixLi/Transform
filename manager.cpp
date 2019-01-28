@@ -235,21 +235,21 @@ void GManager<T>::gpu_conv(
           input_group_size,
           k);
 
-        // GemmKernel(
-        //   &weight_buffer,
-        //   &input_buffer,
-        //   &output_buffer,
-        //   weight_group_size,
-        //   input_group_size,
-        //   k);
-
-        GetOutputFromGpu(
-          output_buffer,
-          output,
-          i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block,
-          n,
+        GemmKernel(
+          &weight_buffer,
+          &input_buffer,
+          &output_buffer,
           weight_group_size,
-          input_group_size);
+          input_group_size,
+          k);
+
+        // GetOutputFromGpu(
+        //   output_buffer,
+        //   output,
+        //   i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block,
+        //   n,
+        //   weight_group_size,
+        //   input_group_size);
     }
   }
 }
