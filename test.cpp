@@ -76,6 +76,8 @@ int main() {
   int k = 16;
   int n = 2;
   SharedArray<int> A(m*k),B(k*n),C(m*n*16);
+  for(int i=0;i<m*n*16;i++)
+    C[i] = 0;
   int *D = new int[m*n];
   int *E = new int[m*n];
   Init(A,m,k);
