@@ -129,6 +129,13 @@ public:
     int group_size,
     int data_size);
 
+  void LoadColDataIntoGpu(
+    SharedArray<T> &_shared_array_buffer,
+    T *input_data_buffer,
+    int step_size,
+    int group_size,
+    int data_size);
+
   void TransInput2GpuFormat(
     T *input_data_buffer,
     const T *input_data,
@@ -236,7 +243,7 @@ void GManager<T>::gpu_conv(
         //   input_group_size,
         //   k);
 
-        LoadDataIntoGpu(
+        LoadColDataIntoGpu(
           input_buffer,
           input+input_offset,
           n,
@@ -342,7 +349,7 @@ void GManager<T>::TransInput2GpuFormat(
 
 
 template<typename T>
-void GManager<T>::LoadDataIntoGpu(
+void GManager<T>::LoadColDataIntoGpu(
   SharedArray<T> &_shared_array_buffer,
   T *input_data_buffer,
   int step_size,
@@ -381,7 +388,7 @@ void GManager<T>::LoadDataIntoGpu(
 
 
 template<typename T>
-void GManager<T>::LoadColDataIntoGpu(
+void GManager<T>::LoadDataIntoGpu(
   SharedArray<T> &_shared_array_buffer,
   T *input_data_buffer,
   int group_size,
