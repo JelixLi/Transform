@@ -354,7 +354,7 @@ void GManager<T>::LoadDataIntoGpu(
       _shared_array_buffer[pos++] = *input_data_buffer_ptr++;
       _shared_array_buffer[pos++] = *input_data_buffer_ptr++;
     }
-    for(register int j=0;j<n;j++) {
+    for(register int j=0;j<_n;j++) {
       _shared_array_buffer[pos++] = *input_data_buffer_ptr++;
     }
     for(register int j=0;j<_size;j++) {
