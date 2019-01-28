@@ -263,7 +263,7 @@ void GManager<T>::GetOutputFromGpu(
     int row_size,
     int col_size) {
 
-    T *output = output_data_buffer + offset;
+    register output_data_buffer_ptr;
     int row_offset = offset / step_size;
     int col_offset = offset % step_size;
     register int pos = 0;
@@ -273,16 +273,17 @@ void GManager<T>::GetOutputFromGpu(
     register int base_addr;
     for(int i=0;i<row_size;i++) { 
       base_addr = (i+row_offset)*step_size+col_offset;
+      output_data_buffer_ptr = output_data_buffer + base_addr;
       for(register int j=0;j<n;j+=4) {
-        output_data_buffer[base_addr+j] = _shared_array_buffer[pos];
-        output_data_buffer[base_addr+j+1] = _shared_array_buffer[pos+16];
-        output_data_buffer[base_addr+j+2] = _shared_array_buffer[pos+32];
-        output_data_buffer[base_addr+j+2] = _shared_array_buffer[pos+48];
+        *output_data_buffer_ptr++ = _shared_array_buffer[pos];
+        *output_data_buffer_ptr++ = _shared_array_buffer[pos+16];
+        *output_data_buffer_ptr++ = _shared_array_buffer[pos+32];
+        *output_data_buffer_ptr++ = _shared_array_buffer[pos+48];
         pos += 64;
       }
 
-      for(register int j=0;j<n;j++) {
-        output_data_buffer[base_addr+j] = _shared_array_buffer[pos];
+      for(register int j=0;j<_n;j++) {
+        *output_data_buffer_ptr++ = _shared_array_buffer[pos];
         pos += 16;
       }
 
@@ -339,15 +340,24 @@ void GManager<T>::LoadDataIntoGpu(
   int group_size,
   int data_size)  {
 
-  T *input_data_buffer_ptr = input_data_buffer;
-  int pos = 0;
-  int size = data_size / 16 * 16;
-  int _size = data_size % 16;
+  register T *input_data_buffer_ptr = input_data_buffer;
+  register int pos = 0;
+  int _size = 16 - data_size % 16;
+
+  int n = data_size / 4;
+  int _n = data_size % 4;
+
   for(int i=0;i<group_size;i++) {
-    for(int j=0;j<size;j++) {
+    for(register int j=0;j<n;j+=4) {
+      _shared_array_buffer[pos++] = *input_data_buffer_ptr++;
+      _shared_array_buffer[pos++] = *input_data_buffer_ptr++;
+      _shared_array_buffer[pos++] = *input_data_buffer_ptr++;
       _shared_array_buffer[pos++] = *input_data_buffer_ptr++;
     }
-    for(int j=0;j<_size;j++) {
+    for(register int j=0;j<n;j++) {
+      _shared_array_buffer[pos++] = *input_data_buffer_ptr++;
+    }
+    for(register int j=0;j<_size;j++) {
       _shared_array_buffer[pos++] = 0.0;
     }
   }
