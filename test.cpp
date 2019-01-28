@@ -40,8 +40,8 @@ void gpu_transposition(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k)
            End
            receive(x);
            receive(y);
-           sum = ((r<<4)*n+c) + output_offset;
-           store(sum,C + ((r<<4)*n+c) + output_offset);
+           //store(sum,C + ((r<<4)*n+c) + output_offset);
+           store(sum,C + ind + ((r*n+c)<<4));
       End 
     End 	
 }
@@ -83,8 +83,8 @@ int main() {
   GemmKernel(&A,&B,&C,m,n,k);
 
 
-  for(int i=0;i<m*16;i++) {
-    for(int j=0;j<n;j++) {
+  for(int i=0;i<m;i++) {
+    for(int j=0;j<n*16;j++) {
       cout<<C[i*n+j]<<" ";
     }
     cout<<endl;
