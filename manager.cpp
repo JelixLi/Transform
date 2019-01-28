@@ -243,13 +243,13 @@ void GManager<T>::gpu_conv(
           input_group_size,
           k);
 
-        // GetOutputFromGpu(
-        //   output_buffer,
-        //   output,
-        //   i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block,
-        //   n,
-        //   weight_group_size,
-        //   input_group_size);
+        GetOutputFromGpu(
+          output_buffer,
+          output,
+          i*Gpu_Memory_Basic_Block*n+j*Gpu_Memory_Basic_Block,
+          n,
+          weight_group_size,
+          input_group_size);
     }
   }
 }
@@ -263,24 +263,14 @@ void GManager<T>::GetOutputFromGpu(
     int row_size,
     int col_size) {
 
-    int pos = 0;
     T *output = output_data_buffer + offset;
     int row_offset = offset / step_size;
     int col_offset = offset % step_size;
-
-    for(int i=0;i<row_size;i++) {
+    int pos = 0;
+    for(int i=0;i<row_size;i++) { 
       for(int j=0;j<col_size;j++) {
-        float sum = 0;
-        // for(int k=0;k<16;k+=4) {
-        //     sum += _shared_array_buffer[pos+k];
-        //     sum += _shared_array_buffer[pos+k+1];
-        //     sum += _shared_array_buffer[pos+k+2];
-        //     sum += _shared_array_buffer[pos+k+3];
-        // }
-
-
+        output_data_buffer[(i+row_offset)*step_size+j+col_offset] = _shared_array_buffer[pos];
         pos += 16;
-        output_data_buffer[(i+row_offset)*step_size+j+col_offset] = sum;
       }
 
     }
