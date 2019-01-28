@@ -266,10 +266,23 @@ void GManager<T>::GetOutputFromGpu(
     T *output = output_data_buffer + offset;
     int row_offset = offset / step_size;
     int col_offset = offset % step_size;
-    int pos = 0;
+    register int pos = 0;
+
+    int n = col_size / 4;
+    int _n = col_size % 4;
+    register int base_addr;
     for(int i=0;i<row_size;i++) { 
-      for(int j=0;j<col_size;j++) {
-        output_data_buffer[(i+row_offset)*step_size+j+col_offset] = _shared_array_buffer[pos];
+      base_addr = (i+row_offset)*step_size+col_offset;
+      for(register int j=0;j<n;j+=4) {
+        output_data_buffer[base_addr+j] = _shared_array_buffer[pos];
+        output_data_buffer[base_addr+j+1] = _shared_array_buffer[pos+16];
+        output_data_buffer[base_addr+j+2] = _shared_array_buffer[pos+32];
+        output_data_buffer[base_addr+j+2] = _shared_array_buffer[pos+48];
+        pos += 64;
+      }
+
+      for(register int j=0;j<n;j++) {
+        output_data_buffer[base_addr+j] = _shared_array_buffer[pos];
         pos += 16;
       }
 
