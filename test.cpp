@@ -45,6 +45,14 @@ void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
     End 	
 }
 
+void Init(SharedArray<float> &A,int m,int n) {
+  for(int i=0;i<m;i++) {
+    for(int j=0;j<n;j++) {
+      A[i*n+j] = i*n+j;
+    }
+  }
+
+}
 
 int main() {
 
@@ -55,6 +63,8 @@ int main() {
   int k = 32;
   int n = 10;
   SharedArray<float> A(m*k),B(k*n),C(m*n);
+  Init(A,m,k);
+  Init(B,k,n);
   GemmKernel(A,B,C,m,n,k);
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
