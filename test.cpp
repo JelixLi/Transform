@@ -3,47 +3,55 @@
 
 using namespace std;
 
-void gpu_transposition(Ptr<Int> A,Ptr<Int> B,Ptr<Int> C,Int m,Int n,Int k) {
-    Int qpuNums = numQPUs();
+// void gpu_transposition(Ptr<Int> A,Ptr<Int> B,Ptr<Int> C,Int m,Int n,Int k) {
+//     Int qpuNums = numQPUs();
 
-    Int inc = 16;
-    Int ind = index();
-    Int inm = me()*k;
+//     Int inc = 16;
+//     Int ind = index();
+//     Int inm = me()*k;
 
-    Ptr<Int> first_p = A+ind+inm;
-    Ptr<Int> first_q = B+ind;
+//     Ptr<Int> first_p = A+ind+inm;
+//     Ptr<Int> first_q = B+ind;
 
-    Ptr<Int> p;
-    Ptr<Int> q;
+//     Ptr<Int> p;
+//     Ptr<Int> q;
 
-    Int x;
-    Int y;
-    Int sum;
+//     Int x;
+//     Int y;
+//     Int sum;
 
-    Int output_offset = ind*n;
+//     Int output_offset = ind*n;
 
-    For(Int r=me(),r<m,r=r+qpuNums) 
-      For(Int c=0,c<n,c++)
-           p = first_p + ((r-me())*k);
-           q = first_q + (c*k);
-           gather(p);
-           gather(q);
-           sum = 0;
-           For(Int s=0,s<k,s=s+inc)
-              gather(p+inc);
-              gather(q+inc);
-              receive(x);
-              receive(y);
-              sum = sum + x*y;
-              p=p+inc;
-              q=q+inc;
-           End
-           receive(x);
-           receive(y);
-           // store(sum,C + ((r<<4)*n+c) + output_offset);
-           store(output_offset,C + output_offset);
-      End 
-    End 	
+//     For(Int r=me(),r<m,r=r+qpuNums) 
+//       For(Int c=0,c<n,c++)
+//            p = first_p + ((r-me())*k);
+//            q = first_q + (c*k);
+//            gather(p);
+//            gather(q);
+//            sum = 0;
+//            For(Int s=0,s<k,s=s+inc)
+//               gather(p+inc);
+//               gather(q+inc);
+//               receive(x);
+//               receive(y);
+//               sum = sum + x*y;
+//               p=p+inc;
+//               q=q+inc;
+//            End
+//            receive(x);
+//            receive(y);
+//            // store(sum,C + ((r<<4)*n+c) + output_offset);
+//            store(output_offset,C + output_offset);
+//       End 
+//     End 	
+// }
+
+
+void gpu_test(Ptr<Int> C) {
+
+    Int ind = index()*2;
+    store(ind,C + ind);
+ 
 }
 
 void Init(SharedArray<int> &A,int m,int n) {
@@ -69,7 +77,10 @@ void cpu_gemm(SharedArray<int> &A,SharedArray<int>& B,int *C,int m,int n,int k) 
 
 int main() {
 
-  auto GemmKernel = compile(gpu_transposition);
+  // auto GemmKernel = compile(gpu_transposition);
+  // GemmKernel.setNumQPUs(1);
+
+  auto GemmKernel = compile(gpu_test);
   GemmKernel.setNumQPUs(1);
 
   int m = 1;
@@ -80,8 +91,8 @@ int main() {
   int *E = new int[m*n];
   Init(A,m,k);
   Init(B,n,k);
-  GemmKernel(&A,&B,&C,m,n,k);
-
+  // GemmKernel(&A,&B,&C,m,n,k);
+  GemmKernel(&C);
 
   for(int i=0;i<m*16;i++) {
     for(int j=0;j<n;j++) {
