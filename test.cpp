@@ -20,7 +20,7 @@ void gpu_transposition(Ptr<Int> A,Ptr<Int> B,Ptr<Int> C,Int m,Int n,Int k) {
     Int y;
     Int sum;
 
-    Int output_offset = ind*n + 16;
+    Int output_offset = ind*n;
 
     For(Int r=me(),r<m,r=r+qpuNums) 
       For(Int c=0,c<n,c++)
@@ -41,7 +41,7 @@ void gpu_transposition(Ptr<Int> A,Ptr<Int> B,Ptr<Int> C,Int m,Int n,Int k) {
            receive(x);
            receive(y);
            // store(sum,C + ((r<<4)*n+c) + output_offset);
-           store(sum,C + output_offset);
+           store(output_offset,C + output_offset);
       End 
     End 	
 }
