@@ -263,7 +263,7 @@ void GManager<T>::GetOutputFromGpu(
     int row_size,
     int col_size) {
 
-    register output_data_buffer_ptr;
+    register T *output_data_buffer_ptr;
     int row_offset = offset / step_size;
     int col_offset = offset % step_size;
     register int pos = 0;
