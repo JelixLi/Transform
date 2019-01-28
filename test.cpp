@@ -65,7 +65,7 @@ int main() {
   SharedArray<float> A(m*k),B(k*n),C(m*n);
   Init(A,m,k);
   Init(B,k,n);
-  GemmKernel(A,B,C,m,n,k);
+  GemmKernel(&A,&B,&C,m,n,k);
   for(int i=0;i<m;i++) {
     for(int j=0;j<n;j++) {
         cout<<C[i*n+j]<<" ";
