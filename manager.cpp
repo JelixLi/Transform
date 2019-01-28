@@ -424,7 +424,7 @@ void im2col(const float *data_im, const int channels, const int height,
     const int channel_size = height * width;
 
     register float *data_col_ptr = data_col;
-    register float *data_im_ptr = data_im;
+    register const float *data_im_ptr = data_im;
 
     for (int channel = channels; channel--; data_im += channel_size) {
         for (int kernel_row = 0; kernel_row < kernel_size; kernel_row++) {
