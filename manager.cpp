@@ -434,17 +434,8 @@ void im2col(const float *data_im, const int channels, const int height,
                     if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
                         int n = output_w/4;
                         int _n = output_w/4;
-                        // for (int output_cols = output_w; output_cols; output_cols--) {
-                        //     *(data_col++) = 0;
-                        // }
-                        for(int i=0;i<n;i+=4) {
-                           *(data_col++) = 0;
-                           *(data_col++) = 0;
-                           *(data_col++) = 0;
-                           *(data_col++) = 0;
-                        }
-                        for(int i=0;i<n;i++) {
-                           *(data_col++) = 0;
+                        for (int output_cols = output_w; output_cols; output_cols--) {
+                            *(data_col++) = 0;
                         }
                     } else {
                         int input_col = -pad + kernel_col;
