@@ -40,8 +40,7 @@ void gpu_transposition(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k)
            End
            receive(x);
            receive(y);
-           //store(sum,C + ((r<<4)*n+c) + output_offset);
-           store(sum,C + ind + ((r*n+c)<<4));
+           store(sum,C + ((r<<4)*n+c) + output_offset);
       End 
     End 	
 }
@@ -72,9 +71,9 @@ int main() {
   auto GemmKernel = compile(gpu_transposition);
   GemmKernel.setNumQPUs(12);
 
-  int m = 2;
+  int m = 1;
   int k = 16;
-  int n = 2;
+  int n = 1;
   SharedArray<float> A(m*k),B(k*n),C(m*n*16);
   float *D = new float[m*n];
   float *E = new float[m*n];
@@ -83,8 +82,8 @@ int main() {
   GemmKernel(&A,&B,&C,m,n,k);
 
 
-  for(int i=0;i<m;i++) {
-    for(int j=0;j<n*16;j++) {
+  for(int i=0;i<m*16;i++) {
+    for(int j=0;j<n;j++) {
       cout<<C[i*n+j]<<" ";
     }
     cout<<endl;
