@@ -83,8 +83,8 @@ int main() {
   GemmKernel(&A,&B,&C,m,n,k);
 
 
-  for(int i=0;i<m*16;i++) {
-    for(int j=0;j<n;j++) {
+  for(int i=0;i<32;i++) {
+    for(int j=0;j<32;j++) {
       cout<<C[i*n+j]<<" ";
     }
     cout<<endl;
