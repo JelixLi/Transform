@@ -66,10 +66,11 @@ void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
 
 int main() {
 
-    auto GemmKernel = compile(gpu_gemm);
+    Kernel<Ptr<Float>, Ptr<Float>, Ptr<Float>,Int,Int,Int> GemmKernel = compile(gpu_gemm);;
+
+    // auto GemmKernel = compile(gpu_gemm);
     GemmKernel.setNumQPUs(12);
 
-    cout<<typeid(GemmKernel)<<endl;
 }
 
 
