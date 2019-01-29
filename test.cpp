@@ -66,10 +66,11 @@ void gpu_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int m,Int n,Int k) {
 
 int main() {
 
-    Kernel<Ptr<Float>, Ptr<Float>, Ptr<Float>,Int,Int,Int> GemmKernel = compile(gpu_gemm);;
+    auto GemmKernel_1 = compile(gpu_gemm);
+    GemmKernel_1.setNumQPUs(12);
 
-    // auto GemmKernel = compile(gpu_gemm);
-    GemmKernel.setNumQPUs(12);
+    auto GemmKernel_2 = compile(gpu_gemm);
+    GemmKernel_2.setNumQPUs(12);
 
 }
 
