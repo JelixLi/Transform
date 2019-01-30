@@ -62,19 +62,22 @@ void im2col(const float *data_im, const int channels, const int height,
     }
 }
 
-void get_gpu_format_weight(float *gpu_format_weight,float *weight,int kernel_size) {
+void get_gpu_format_weight(SharedArray<float>& gpu_format_weight,float *weight,int kernel_size) {
   int n = kernel_size*kernel_size;
+  int pos = 0;
+  float tmp;
   for(int i=0;i<n;i++) {
+    tmp = *weight;
     for(int j=0;j<16;j++) {
-      *gpu_format_weight = *weight;
-       gpu_format_weight++;
+      gpu_format_weight[pos++] = tmp;
     }
     weight++;
   }
 }
 
 void loadSingleImageIntoGpu(
-  float *gpu_format_data,
+  SharedArray<float>& gpu_format_data,
+  int offset,
   float *col_data,
   int kernel_size,
   int height,
@@ -92,13 +95,13 @@ void loadSingleImageIntoGpu(
   int _r = col_size % 16;
 
   float *col_data_ptr;
-  float *gpu_format_data_ptr = gpu_format_data;
+  int pos = offset;
 
   for(int i=0;i<r;i++) {
     for(int j=0;j<row_size;j++) {
         col_data_ptr = col_data + col_size*j + i*16;
         for(int k=0;k<16;k++) {
-            *gpu_format_data_ptr++ = *col_data_ptr++; 
+            gpu_format_data[pos++] = *col_data_ptr++; 
         }
     }
   }
@@ -106,9 +109,9 @@ void loadSingleImageIntoGpu(
   for(int j=0;j<row_size;j++) {
       col_data_ptr = col_data + col_size*j + r*16;
       for(int k=0;k<_r;k++) {
-          *gpu_format_data_ptr++ = *col_data_ptr++; 
+          gpu_format_data[pos++] = *col_data_ptr++; 
       }
-      gpu_format_data_ptr += 16 - _r; 
+      pos += 16 - _r; 
   }
 
 
@@ -116,7 +119,7 @@ void loadSingleImageIntoGpu(
 
 
 void loadMultiImagesIntoGpu(  
-  float *gpu_format_data,
+  SharedArray<float>& gpu_format_data,
   float *col_data,
   int kernel_size,
   int channels,
@@ -136,7 +139,8 @@ void loadMultiImagesIntoGpu(
 
   for(int i=0;i<channels;i++) {
     loadSingleImageIntoGpu(
-      gpu_format_data+i*gpu_buffer_offset,
+      gpu_format_data,
+      i*gpu_buffer_offset,
       col_data+i*col_buffer_offset,
       kernel_size,
       height,
@@ -205,7 +209,8 @@ int main() {
   float *image = new float[height*width*channels];
   float *weight = new float[kernel_size*kernel_size*channels];
 
-  float *gpu_format_weight = new float[16*kernel_size*kernel_size*channels];
+  // float *gpu_format_weight = new float[16*kernel_size*kernel_size*channels];
+  SharedArray<float> gpu_format_weight(16*kernel_size*kernel_size*channels);
 
   get_gpu_format_weight(gpu_format_weight,weight,kernel_size);
 
@@ -213,12 +218,25 @@ int main() {
 
   im2col(image,channels,height,width,kernel_size,pad,stride,col_data);
 
-  float *gpu_format_image = new float[channels*output_w*output_h*16];
+  // float *gpu_format_image = new float[channels*output_w*output_h*16];
+  SharedArray<float> gpu_format_image(channels*output_w*output_h*16);
+  SharedArray<float> gpu_output_buffer(channels*output_w*output_h*16);
 
   loadMultiImagesIntoGpu(gpu_format_image,col_data,kernel_size,channels,height,width,pad,stride);
 
   auto DepthwiseKernel = compile(gpu_depthwise_gemm);
   DepthwiseKernel.setNumQPUs(12);
+
+  int n = output_w*output_h;
+  int block_num = (n%16==0?n/16:n/16+1);
+
+  DepthwiseKernel(
+    gpu_format_weight,
+    gpu_format_image,
+    gpu_output_buffer,
+    channels,
+    block_num,
+    kernel_size*kernel_size);
 }
 
 
