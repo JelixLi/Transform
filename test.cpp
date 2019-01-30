@@ -152,11 +152,11 @@ void gpu_depthwise_gemm(Ptr<Float> A,Ptr<Float> B,Ptr<Float> C,Int kernel_num,In
     Int ind = index();
     Int inc = 16;
     Int inm = (me()<<4);
+    Int output_offset;
 
     Ptr<Float> base_p;
     Ptr<Float> p;
     Ptr<Float> q;
-    Ptr<Float> output_offset;
 
     Float x;
     Float y;
