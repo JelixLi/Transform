@@ -236,7 +236,7 @@ int main() {
     gpu_output_buffer,
     channels,
     block_num,
-    kernel_size*kernel_size);
+    (kernel_size*kernel_size));
 }
 
 
