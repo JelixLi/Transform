@@ -231,12 +231,12 @@ int main() {
   int block_num = (n%16==0?n/16:n/16+1);
 
   DepthwiseKernel(
-    gpu_format_weight,
-    gpu_format_image,
-    gpu_output_buffer,
+    &gpu_format_weight,
+    &gpu_format_image,
+    &gpu_output_buffer,
     channels,
     block_num,
-    (kernel_size*kernel_size));
+    kernel_size*kernel_size);
 }
 
 
