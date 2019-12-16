@@ -1,2 +1,3 @@
 FROM gcc
-COPY 
+COPY hello.cpp .
+RUN  gcc hello.cpp -o hello
